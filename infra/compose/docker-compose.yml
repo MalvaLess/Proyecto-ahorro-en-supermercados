@@ -1,0 +1,17 @@
+name: supermarket-savings-project
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-supermarket-savings
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: db_supermarket_savings_project
+    ports:
+      - "5432:5432"
+    volumes:
+      - supermarket_savings_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  supermarket_savings_postgres_data:
