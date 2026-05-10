@@ -1,24 +1,27 @@
-import os 
-from flask import Flask, jsonify
+import sys
+import os
 from dotenv import load_dotenv
-from models import db
 
 load_dotenv()
 
+from flask import Flask, jsonify
+from flask_migrate import Migrate
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from models.models import db
+
 app = Flask(__name__)
 
-app.config('DEBUG') = True
-app.config('SQLALCHEMY_DATABASE_URI') = os.getenv('DATABASE_URL')
-app.config('SQLALCHEMY_TRACK_MODIFICATIONS') = False
+app.config["DEBUG"] = True
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db.init_app(app) # Vinculo las entidades a la app
+db.init_app(app)
+migrate = Migrate(app, db)
 
-@app.route('/')
+@app.route("/")
 def main():
-    return jsonify({
-        "status": "connected to postgres"
-    }), 200
+    return jsonify({"status": "connected to postgres"}), 200
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
