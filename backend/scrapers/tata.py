@@ -84,7 +84,6 @@ def scrape_categoria(termino="", pagina=0, cantidad=50):
     response = requests.post(ENDPOINT, json=payload)
     response.raise_for_status()
     data = response.json()
-
     edges = data["data"]["search"]["products"]["edges"]
 
     resultado = []
@@ -95,10 +94,9 @@ def scrape_categoria(termino="", pagina=0, cantidad=50):
             continue
         resultado.append(
             {
-                "producto_id": p["productId"],
                 "sku": p["sku"],
-                "nombre": p["name"],
-                "marca": p["brand"]["name"],
+                "nombre_externo": p["name"],
+                "marca_externa": p["brand"]["name"],
                 "gtin": p.get("gtin"),
                 "imagen": p["image"][0]["url"] if p["image"] else None,
                 "precio": oferta["price"],
@@ -114,41 +112,41 @@ def guardar_en_db(productos):
     with app.app_context():
         cadena = StoreChain.query.filter_by(name=STORE_CHAIN_NAME).first()
         if not cadena:
-            print(
-                f"Error: no se encontró la cadena '{STORE_CHAIN_NAME}' en la base de datos. Corré el seed primero."
-            )
+            print(f"Error: no se encontró '{STORE_CHAIN_NAME}'. Corré el seed primero.")
             return
 
         store = Store.query.filter_by(storeChainId=cadena.storeChainId).first()
         if not store:
-            print(
-                f"Error: no se encontró ninguna tienda para '{STORE_CHAIN_NAME}'. Corré el seed primero."
-            )
+            print(f"Error: no se encontró ninguna tienda para '{STORE_CHAIN_NAME}'.")
             return
 
         store_id = store.storeId
 
         for p in productos:
-            brand = Brand.query.filter_by(name=p["marca"]).first()
-            if not brand:
-                brand = Brand(name=p["marca"], updatedAt=datetime.now())
-                db.session.add(brand)
-                db.session.flush()
-
+            # Buscar producto por GTIN en el catálogo normalizado
             product = Product.query.filter_by(ean=p["gtin"]).first()
+
             if not product:
+                # No está en catálogo CKAN, crear producto nuevo con nombre de Ta-Ta
+                brand = Brand.query.filter_by(name=p["marca_externa"]).first()
+                if not brand:
+                    brand = Brand(name=p["marca_externa"], updatedAt=datetime.now())
+                    db.session.add(brand)
+                    db.session.flush()
+
                 product = Product(
                     brandId=brand.brandId,
-                    name=p["nombre"],
-                    normalizedName=p["nombre"].lower(),
+                    name=p["nombre_externo"],
+                    normalizedName=p["nombre_externo"].lower(),
                     ean=p["gtin"],
-                    unit="un",
                     imageURL=p["imagen"],
+                    unit="un",
                     updatedAt=datetime.now(),
                 )
                 db.session.add(product)
                 db.session.flush()
 
+            # Buscar o crear store_product
             store_product = StoreProduct.query.filter_by(
                 storeId=store_id, productId=product.productId
             ).first()
@@ -157,14 +155,18 @@ def guardar_en_db(productos):
                     storeId=store_id,
                     productId=product.productId,
                     externalSku=p["sku"],
-                    externalName=p["nombre"],
-                    externalBrand=p["marca"],
+                    externalName=p["nombre_externo"],
+                    externalBrand=p["marca_externa"],
                     isAvailable=p["disponible"],
                     updatedAt=datetime.now(),
                 )
                 db.session.add(store_product)
                 db.session.flush()
+            else:
+                # Actualizar disponibilidad si ya existe
+                store_product.isAvailable = p["disponible"]
 
+            # Siempre insertar nuevo precio
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
                 price=p["precio"],
