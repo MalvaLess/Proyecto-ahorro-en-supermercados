@@ -48,6 +48,9 @@ class Store(db.Model):
     __tablename__ = "store"
     storeId: Mapped[int] = mapped_column(primary_key=True)
     storeChainId: Mapped[int] = mapped_column(ForeignKey("store_chain.storeChainId"))
+    externalIdSipc: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )  # id.establecimientos en CKAN
     address: Mapped[str] = mapped_column(String(255), nullable=False)
     latitude: Mapped[float] = mapped_column(
         Numeric(precision=10, scale=7), nullable=False
@@ -102,22 +105,16 @@ class Product(db.Model):
     externalIdCkan: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )  # id.producto en CKAN
-    name: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )  # Se amplía el campo por conflictos con scrapers
-    normalizedName: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )  # Se amplía el campo por conflictos con scrapers
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    normalizedName: Mapped[str] = mapped_column(String(255), nullable=False)
     ean: Mapped[str] = mapped_column(String(50), nullable=True)
-    description: Mapped[str] = mapped_column(
-        String(255), nullable=True
-    )  # Se amplía el campo por conflictos con scrapers
+    description: Mapped[str] = mapped_column(String(255), nullable=True)
     weightValue: Mapped[float] = mapped_column(
         Numeric(precision=10, scale=2), nullable=True
     )
     unit: Mapped[str] = mapped_column(String(5), nullable=False)
     format: Mapped[str] = mapped_column(String(50), nullable=True)
-    imageURL: Mapped[str] = mapped_column(String(255), nullable=True)
+    imageURL: Mapped[str] = mapped_column(String(500), nullable=True)
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
@@ -125,15 +122,19 @@ class Product(db.Model):
     )
 
     brand: Mapped["Brand"] = relationship("Brand", back_populates="products")
+
     categories: Mapped[list["ProductCategory"]] = relationship(
         "ProductCategory", back_populates="product"
     )
+
     stores: Mapped[list["StoreProduct"]] = relationship(
         "StoreProduct", back_populates="product"
     )
+
     favorites: Mapped[list["Favorite"]] = relationship(
         "Favorite", back_populates="product"
     )
+
     shoppingListItems: Mapped[list["ShoppingListItem"]] = relationship(
         "ShoppingListItem", back_populates="product"
     )
@@ -162,7 +163,9 @@ class StoreProduct(db.Model):
     storeId: Mapped[int] = mapped_column(ForeignKey("store.storeId"))
     productId: Mapped[int] = mapped_column(ForeignKey("product.productId"))
     externalSku: Mapped[str] = mapped_column(String(50), nullable=True)
-    externalName: Mapped[str] = mapped_column(String(50), nullable=True)
+    externalName: Mapped[str] = mapped_column(
+        String(255), nullable=True
+    )  # Se agregó capacidad al string para que no se corte el nombre del producto
     externalBrand: Mapped[str] = mapped_column(String(50), nullable=True)
     isAvailable: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
@@ -199,6 +202,9 @@ class PriceSnapshot(db.Model):
     currency: Mapped[str] = mapped_column(String(50), nullable=False)
     capturedAt: Mapped[datetime] = mapped_column()
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    source: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="SCRAPER"
+    )  # Se agregó el source para poder identificar el origen del precio si Scraper o CKAN
 
     storeProduct: Mapped["StoreProduct"] = relationship(
         "StoreProduct", back_populates="prices"
@@ -211,11 +217,8 @@ class Favorite(db.Model):
     userId: Mapped[int] = mapped_column(ForeignKey("users.userId"))
     productId: Mapped[int] = mapped_column(ForeignKey("product.productId"))
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-
     user: Mapped["User"] = relationship("User", back_populates="favorites")
-
     product: Mapped["Product"] = relationship("Product", back_populates="favorites")
-
     __table_args__ = (
         db.UniqueConstraint("userId", "productId", name="uq_user_product_favorite"),
     )
