@@ -4,6 +4,7 @@ from decimal import Decimal
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, Numeric, String, ForeignKey
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -29,6 +30,27 @@ class User(db.Model):
     shoppingList: Mapped[list["ShoppingList"]] = relationship(
         "ShoppingList", back_populates="user"
     )
+
+    def set_password(self, password: str):
+        self.passwordHash = generate_password_hash(password)
+
+    def check_password(self, password: str):
+        return check_password_hash(self.passwordHash, password)
+    
+    def deactivate(self):
+        self.isActive = False
+
+    def to_dict(self):
+        return {
+            "userId": self.userId,
+            "firstName": self.firstName,
+            "lastName": self.lastName,
+            "email": self.email,
+            "isActive": self.isActive,
+            "lastLoginAt": self.lastLoginAt.isoformat() if self.lastLoginAt else None,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
 
 
 class StoreChain(db.Model):

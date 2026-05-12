@@ -1,11 +1,16 @@
 import sys
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
 from flask import Flask, jsonify
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
+from routes.health_routes import health_bp
+from routes.user_routes import user_bp
+from routes.auth_routes import auth_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -16,8 +21,16 @@ app.config["DEBUG"] = True
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=int(os.getenv("JWT_TIME_DELTA")))
+
 db.init_app(app)
 migrate = Migrate(app, db)
+jwt = JWTManager(app)
+
+app.register_blueprint(health_bp, url_prefix="/api/check")
+app.register_blueprint(user_bp, url_prefix="/api/users")
+app.register_blueprint(auth_bp, url_prefix="/api/auth")
 
 @app.route("/")
 def main():
