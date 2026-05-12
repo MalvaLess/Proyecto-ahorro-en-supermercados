@@ -7,6 +7,7 @@ from sqlalchemy import Integer, Numeric, String, ForeignKey
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
     __tablename__ = "users"
     userId: Mapped[int] = mapped_column(primary_key=True)
@@ -17,11 +18,17 @@ class User(db.Model):
     isActive: Mapped[bool] = mapped_column(default=True)
     lastLoginAt: Mapped[datetime | None] = mapped_column(nullable=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
-    favorites: Mapped[list["Favorite"]] = relationship("Favorite", back_populates="user")
+    favorites: Mapped[list["Favorite"]] = relationship(
+        "Favorite", back_populates="user"
+    )
 
-    shoppingList: Mapped[list["ShoppingList"]] = relationship("ShoppingList", back_populates="user")
+    shoppingList: Mapped[list["ShoppingList"]] = relationship(
+        "ShoppingList", back_populates="user"
+    )
 
 
 class StoreChain(db.Model):
@@ -30,7 +37,9 @@ class StoreChain(db.Model):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     stores: Mapped[list["Store"]] = relationship("Store", back_populates="chain")
 
@@ -40,15 +49,23 @@ class Store(db.Model):
     storeId: Mapped[int] = mapped_column(primary_key=True)
     storeChainId: Mapped[int] = mapped_column(ForeignKey("store_chain.storeChainId"))
     address: Mapped[str] = mapped_column(String(255), nullable=False)
-    latitude: Mapped[float] = mapped_column(Numeric(precision=10, scale=7), nullable=False)
-    longitude: Mapped[float] = mapped_column(Numeric(precision=10, scale=7), nullable=False)
+    latitude: Mapped[float] = mapped_column(
+        Numeric(precision=10, scale=7), nullable=False
+    )
+    longitude: Mapped[float] = mapped_column(
+        Numeric(precision=10, scale=7), nullable=False
+    )
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     chain: Mapped["StoreChain"] = relationship("StoreChain", back_populates="stores")
 
-    storeProducts: Mapped[list["StoreProduct"]] = relationship("StoreProduct", back_populates="store")
+    storeProducts: Mapped[list["StoreProduct"]] = relationship(
+        "StoreProduct", back_populates="store"
+    )
 
 
 class Brand(db.Model):
@@ -56,7 +73,9 @@ class Brand(db.Model):
     brandId: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     products: Mapped[list["Product"]] = relationship("Product", back_populates="brand")
 
@@ -67,36 +86,58 @@ class Category(db.Model):
     categoryId: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
-    productCategories: Mapped[list["ProductCategory"]] = relationship("ProductCategory", back_populates="category")
+    productCategories: Mapped[list["ProductCategory"]] = relationship(
+        "ProductCategory", back_populates="category"
+    )
 
 
 class Product(db.Model):
     __tablename__ = "product"
     productId: Mapped[int] = mapped_column(primary_key=True)
     brandId: Mapped[int] = mapped_column(ForeignKey("brand.brandId"))
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
-    normalizedName: Mapped[str] = mapped_column(String(50), nullable=False)
+    externalIdCkan: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )  # id.producto en CKAN
+    name: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # Se amplía el campo por conflictos con scrapers
+    normalizedName: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # Se amplía el campo por conflictos con scrapers
     ean: Mapped[str] = mapped_column(String(50), nullable=True)
-    description: Mapped[str] = mapped_column(String(50), nullable=True)
-    weightValue: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), nullable=True)
+    description: Mapped[str] = mapped_column(
+        String(255), nullable=True
+    )  # Se amplía el campo por conflictos con scrapers
+    weightValue: Mapped[float] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=True
+    )
     unit: Mapped[str] = mapped_column(String(5), nullable=False)
     format: Mapped[str] = mapped_column(String(50), nullable=True)
     imageURL: Mapped[str] = mapped_column(String(255), nullable=True)
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     brand: Mapped["Brand"] = relationship("Brand", back_populates="products")
+    categories: Mapped[list["ProductCategory"]] = relationship(
+        "ProductCategory", back_populates="product"
+    )
+    stores: Mapped[list["StoreProduct"]] = relationship(
+        "StoreProduct", back_populates="product"
+    )
+    favorites: Mapped[list["Favorite"]] = relationship(
+        "Favorite", back_populates="product"
+    )
+    shoppingListItems: Mapped[list["ShoppingListItem"]] = relationship(
+        "ShoppingListItem", back_populates="product"
+    )
 
-    categories: Mapped[list["ProductCategory"]] = relationship("ProductCategory", back_populates="product")
-
-    stores: Mapped[list["StoreProduct"]] = relationship("StoreProduct", back_populates="product")
-
-    favorites: Mapped[list["Favorite"]] = relationship("Favorite", back_populates="product")
-
-    shoppingListItems: Mapped[list["ShoppingListItem"]] = relationship("ShoppingListItem", back_populates="product")
 
 class ProductCategory(db.Model):
     __tablename__ = "product_category"
@@ -106,9 +147,13 @@ class ProductCategory(db.Model):
 
     product: Mapped["Product"] = relationship("Product", back_populates="categories")
 
-    category: Mapped["Category"] = relationship("Category", back_populates="productCategories")
+    category: Mapped["Category"] = relationship(
+        "Category", back_populates="productCategories"
+    )
 
-    __table_args__ = (db.UniqueConstraint("productId", "categoryId", name="uq_product_category"),)
+    __table_args__ = (
+        db.UniqueConstraint("productId", "categoryId", name="uq_product_category"),
+    )
 
 
 class StoreProduct(db.Model):
@@ -121,28 +166,44 @@ class StoreProduct(db.Model):
     externalBrand: Mapped[str] = mapped_column(String(50), nullable=True)
     isAvailable: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
-    prices: Mapped[list["PriceSnapshot"]] = relationship("PriceSnapshot", back_populates="storeProduct")
+    prices: Mapped[list["PriceSnapshot"]] = relationship(
+        "PriceSnapshot", back_populates="storeProduct"
+    )
 
     product: Mapped["Product"] = relationship("Product", back_populates="stores")
 
     store: Mapped["Store"] = relationship("Store", back_populates="storeProducts")
 
-    shoppingListItems: Mapped[list["ShoppingListItem"]] = relationship("ShoppingListItem", back_populates="selectedStoreProduct")
+    shoppingListItems: Mapped[list["ShoppingListItem"]] = relationship(
+        "ShoppingListItem", back_populates="selectedStoreProduct"
+    )
 
-    __table_args__ = (db.UniqueConstraint("storeId", "productId", name="uq_store_product"),)
+    __table_args__ = (
+        db.UniqueConstraint("storeId", "productId", name="uq_store_product"),
+    )
+
 
 class PriceSnapshot(db.Model):
     __tablename__ = "price_snapshot"
     priceSnapshotId: Mapped[int] = mapped_column(primary_key=True)
-    storeProductId: Mapped[int] = mapped_column(ForeignKey("store_product.storeProductId"))
-    price: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False)
+    storeProductId: Mapped[int] = mapped_column(
+        ForeignKey("store_product.storeProductId")
+    )
+    price: Mapped[Decimal] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=False
+    )
     currency: Mapped[str] = mapped_column(String(50), nullable=False)
     capturedAt: Mapped[datetime] = mapped_column()
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    storeProduct: Mapped["StoreProduct"] = relationship("StoreProduct", back_populates="prices")
+    storeProduct: Mapped["StoreProduct"] = relationship(
+        "StoreProduct", back_populates="prices"
+    )
+
 
 class Favorite(db.Model):
     __tablename__ = "favorite"
@@ -155,36 +216,66 @@ class Favorite(db.Model):
 
     product: Mapped["Product"] = relationship("Product", back_populates="favorites")
 
-    __table_args__ = (db.UniqueConstraint("userId", "productId", name="uq_user_product_favorite"),)
+    __table_args__ = (
+        db.UniqueConstraint("userId", "productId", name="uq_user_product_favorite"),
+    )
+
 
 class ShoppingList(db.Model):
     __tablename__ = "shopping_list"
     shoppingListId: Mapped[int] = mapped_column(primary_key=True)
     userId: Mapped[int] = mapped_column(ForeignKey("users.userId"))
     name: Mapped[str] = mapped_column(String(50), nullable=False)
-    subTotal: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False, default=0)
-    total: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False, default=0)
+    subTotal: Mapped[Decimal] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=False, default=0
+    )
+    total: Mapped[Decimal] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=False, default=0
+    )
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="shoppingList")
 
-    items: Mapped[list["ShoppingListItem"]] = relationship("ShoppingListItem", back_populates="shoppingList")
+    items: Mapped[list["ShoppingListItem"]] = relationship(
+        "ShoppingListItem", back_populates="shoppingList"
+    )
+
 
 class ShoppingListItem(db.Model):
     __tablename__ = "shopping_list_item"
     shoppingListItemId: Mapped[int] = mapped_column(primary_key=True)
-    shoppingListId: Mapped[int] = mapped_column(ForeignKey("shopping_list.shoppingListId"))
-    productId: Mapped[int] = mapped_column(ForeignKey("product.productId"), nullable=False)
-    selectedStoreProductId: Mapped[int] = mapped_column(ForeignKey("store_product.storeProductId"), nullable=True)
+    shoppingListId: Mapped[int] = mapped_column(
+        ForeignKey("shopping_list.shoppingListId")
+    )
+    productId: Mapped[int] = mapped_column(
+        ForeignKey("product.productId"), nullable=False
+    )
+    selectedStoreProductId: Mapped[int] = mapped_column(
+        ForeignKey("store_product.storeProductId"), nullable=True
+    )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    unitPrice: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False, default=0)
-    totalPrice: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False, default=0)
+    unitPrice: Mapped[Decimal] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=False, default=0
+    )
+    totalPrice: Mapped[Decimal] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=False, default=0
+    )
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    updatedAt: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
-    shoppingList: Mapped["ShoppingList"] = relationship("ShoppingList", back_populates="items")
+    shoppingList: Mapped["ShoppingList"] = relationship(
+        "ShoppingList", back_populates="items"
+    )
 
-    product: Mapped["Product"] = relationship("Product", back_populates="shoppingListItems")
+    product: Mapped["Product"] = relationship(
+        "Product", back_populates="shoppingListItems"
+    )
 
-    selectedStoreProduct: Mapped["StoreProduct"] = relationship("StoreProduct", back_populates="shoppingListItems")
+    selectedStoreProduct: Mapped["StoreProduct"] = relationship(
+        "StoreProduct", back_populates="shoppingListItems"
+    )
