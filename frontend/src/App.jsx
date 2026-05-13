@@ -6,6 +6,8 @@ import Offers from './pages/Offers'
 import About from './pages/About'
 import Login from './pages/Login'
 import ProductsCategory from './pages/ProductsCategory'
+import Register from './pages/Register'
+
 
 function App() {
 
@@ -28,6 +30,10 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/products/:category"element={<ProductsCategory />}/>
+
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/register" element={<Register />} />
 
 
 
