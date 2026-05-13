@@ -11,6 +11,7 @@ from flask_jwt_extended import JWTManager
 from routes.health_routes import health_bp
 from routes.user_routes import user_bp
 from routes.auth_routes import auth_bp
+from routes.brand_routes import brand_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -31,6 +32,7 @@ jwt = JWTManager(app)
 app.register_blueprint(health_bp, url_prefix="/api/check")
 app.register_blueprint(user_bp, url_prefix="/api/users")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(brand_bp, url_prefix="/api/brands")
 
 @app.route("/")
 def main():

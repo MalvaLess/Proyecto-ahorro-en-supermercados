@@ -66,6 +66,24 @@ def create():
         "data": user.to_dict()
     }), status_code
 
+@user_bp.route("/<int:user_id>", methods=["PUT"])
+def update(user_id):
+    data = request.get_json(silent=True) or {}
+
+    user, error, status_code = update_user(user_id, data)
+
+    if error:
+        return jsonify({
+            "success": False,
+            **error
+        }), status_code
+    
+    return jsonify({
+        "success": True,
+        "message": "Usuario actualizado correctamente",
+        "data": user.to_dict()
+    }), status_code
+
 
 @user_bp.route("/<int:user_id>", methods=["DELETE"])
 def delete(user_id):

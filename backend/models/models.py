@@ -104,6 +104,14 @@ class Brand(db.Model):
 
     products: Mapped[list["Product"]] = relationship("Product", back_populates="brand")
 
+    def to_dict(self):
+        return {
+            "brandId": self.brandId,
+            "name": self.name,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
+
 
 class Category(db.Model):
     __tablename__ = "category"
