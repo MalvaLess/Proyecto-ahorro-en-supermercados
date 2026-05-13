@@ -1,0 +1,74 @@
+.how {
+  padding: 120px;
+  background-color: #f7f9f7;
+}
+
+.how-header {
+  text-align: center;
+  margin-bottom: 90px;
+}
+
+.how-header h2 {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: #1f1f1f;
+}
+
+.how-header p {
+  font-size: 20px;
+  color: #666;
+}
+
+.how-steps {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  position: relative;
+}
+
+.step-card {
+  width: 280px;
+  text-align: center;
+  position: relative;
+}
+
+.step-number {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px auto;
+  border-radius: 50%;
+  background-color: #2e7d32;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  font-weight: bold;
+  position: relative;
+  z-index: 2;
+}
+
+.step-card h3 {
+  margin-bottom: 18px;
+  font-size: 26px;
+  color: #1f1f1f;
+}
+
+.step-card p {
+  color: #666;
+  line-height: 1.7;
+}
+
+/* línea horizontal */
+
+.how-steps::before {
+  content: "";
+  position: absolute;
+  top: 40px;
+  left: 18%;
+  width: 64%;
+  height: 4px;
+  background-color: #c8e6c9;
+  z-index: 1;
+}
