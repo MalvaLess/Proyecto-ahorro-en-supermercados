@@ -127,6 +127,13 @@ class Category(db.Model):
         "ProductCategory", back_populates="category"
     )
 
+    def to_dict(self):
+        return {
+            "categoryId": self.categoryId,
+            "name": self.name,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
 
 class Product(db.Model):
     __tablename__ = "product"

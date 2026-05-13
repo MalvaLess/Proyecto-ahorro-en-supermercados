@@ -12,6 +12,7 @@ from routes.health_routes import health_bp
 from routes.user_routes import user_bp
 from routes.auth_routes import auth_bp
 from routes.brand_routes import brand_bp
+from routes.category_routes import category_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -33,6 +34,7 @@ app.register_blueprint(health_bp, url_prefix="/api/check")
 app.register_blueprint(user_bp, url_prefix="/api/users")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(brand_bp, url_prefix="/api/brands")
+app.register_blueprint(category_bp, url_prefix="/api/categories")
 
 @app.route("/")
 def main():

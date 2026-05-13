@@ -28,7 +28,7 @@ def create_category(data):
     
     clean_name = name.strip()
 
-    existing_category = Category.query.filer(
+    existing_category = Category.query.filter(
         func.lower(Category.name) == clean_name.lower() 
     ).first()
 
@@ -84,7 +84,7 @@ def update_category(category_id, data):
 
         existing_category = Category.query.filter(
             func.lower(Category.name) == clean_name.lower(),
-            Category.brandId != Category.brandId
+            Category.categoryId != category.categoryId
         ).first()
 
         if existing_category:
