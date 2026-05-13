@@ -176,6 +176,36 @@ class Product(db.Model):
         "ShoppingListItem", back_populates="product"
     )
 
+    def to_dict(self):
+        return {
+            "productId": self.productId,
+            "brandId": self.brandId,
+            "brand": {
+                "brandId": self.brand.brandId,
+                "name": self.brand.name
+            } if self.brand else None,
+            "externalIdCkan": self.externalIdCkan,
+            "name": self.name,
+            "normalizedName": self.normalizedName,
+            "ean": self.ean,
+            "description": self.description,
+            "weightValue": float(self.weightValue) if self.weightValue is not None else None,
+            "unit": self.unit,
+            "format": self.format,
+            "imageURL": self.imageURL,
+            "isActive": self.isActive,
+            "categories": [
+                {
+                    "categoryId": product_category.category.categoryId,
+                    "name": product_category.category.name
+                }
+                for product_category in self.categories
+                if product_category.category is not None
+            ],
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
+
 
 class ProductCategory(db.Model):
     __tablename__ = "product_category"
