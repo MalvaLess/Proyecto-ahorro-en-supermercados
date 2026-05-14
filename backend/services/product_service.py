@@ -72,10 +72,11 @@ def get_product_by_id(product_id):
 def create_product(data):
     required_fields = ["brandId", "name", "unit"]
 
-    missing_fields = [
-        field for field in required_fields
-        if data.get(field) is None or str(data.get(field)).strip() == ""
-    ]
+    missing_fields = []
+
+    for field in required_fields:
+        if data.get(field) is None or str(data.get(field)).strip() == "":
+            missing_fields.append(field)
 
     if missing_fields:
         return None, {

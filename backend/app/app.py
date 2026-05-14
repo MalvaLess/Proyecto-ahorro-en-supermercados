@@ -14,6 +14,8 @@ from routes.auth_routes import auth_bp
 from routes.brand_routes import brand_bp
 from routes.category_routes import category_bp
 from routes.product_routes import product_bp
+from routes.store_chain_routes import store_chain_bp
+from routes.store_routes import store_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -37,6 +39,8 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(brand_bp, url_prefix="/api/brands")
 app.register_blueprint(category_bp, url_prefix="/api/categories")
 app.register_blueprint(product_bp, url_prefix="/api/products")
+app.register_blueprint(store_chain_bp, url_prefix="/api/store-chain")
+app.register_blueprint(store_bp, url_prefix="/api/stores")
 
 @app.route("/")
 def main():

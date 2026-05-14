@@ -65,6 +65,15 @@ class StoreChain(db.Model):
 
     stores: Mapped[list["Store"]] = relationship("Store", back_populates="chain")
 
+    def to_dict(self):
+        return {
+            "storeChainId": self.storeChainId,
+            "name": self.name,
+            "isActive": self.isActive,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
+
 
 class Store(db.Model):
     __tablename__ = "store"
@@ -91,6 +100,22 @@ class Store(db.Model):
     storeProducts: Mapped[list["StoreProduct"]] = relationship(
         "StoreProduct", back_populates="store"
     )
+
+    def to_dict(self):
+        return {
+            "storeId": self.storeId,
+            "storeChainId": self.storeChainId,
+            "chain": {
+                "storeChainId": self.chain.storeChainId,
+                "name": self.chain.name
+            } if self.chain else None,
+            "address": self.address,
+            "latitude": float(self.latitude) if self.latitude is not None else None,
+            "longitude": float(self.longitude) if self.longitude is not None else None,
+            "isActive": self.isActive,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
 
 
 class Brand(db.Model):
@@ -223,6 +248,17 @@ class ProductCategory(db.Model):
         db.UniqueConstraint("productId", "categoryId", name="uq_product_category"),
     )
 
+    def to_dict(self):
+        return {
+            "productCategoryId": self.productCategoryId,
+            "productId": self.productId,
+            "categoryId": self.categoryId,
+            "category": {
+                "categoryId": self.category.categoryId,
+                "name": self.category.name
+            } if self.category else None
+        }
+
 
 class StoreProduct(db.Model):
     __tablename__ = "store_product"
@@ -252,6 +288,11 @@ class StoreProduct(db.Model):
         "ShoppingListItem", back_populates="selectedStoreProduct"
     )
 
+    offers: Mapped[list["Offer"]] = relationship(
+        "Offer",
+        back_populates="storeProduct"
+    )
+
     __table_args__ = (
         db.UniqueConstraint("storeId", "productId", name="uq_store_product"),
     )
@@ -277,6 +318,52 @@ class PriceSnapshot(db.Model):
         "StoreProduct", back_populates="prices"
     )
 
+
+class Offer(db.Model):
+    __tablename__ = "offer"
+    offerId: Mapped[int] = mapped_column(primary_key= True)
+    storeProductId: Mapped[int] = mapped_column(
+        ForeignKey("store_product.storeProductId"),
+        nullable=False
+    )
+    offerType: Mapped[str] = mapped_column(String(15), nullable=False)
+    offerPrice: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=10, scale=2), 
+        nullable=True, 
+        default=0
+    )
+    currency: Mapped[str] = mapped_column(String(10), nullable=True)
+    isActive: Mapped[bool] = mapped_column(default=True)
+    createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    updatedAt: Mapped[datetime] = mapped_column(
+        server_default=func.now(), 
+        onupdate=func.now()
+    )
+
+    storeProduct: Mapped["StoreProduct"] = relationship(
+        "StoreProduct",
+        back_populates="offers"
+    )
+
+    schedules: Mapped[list["OfferSchedule"]] = relationship(
+        "OfferSchedule",
+        back_populates="offer"
+    )
+
+class OfferSchedule(db.Model):
+    __tablename__ = "offer_schedule"
+    offerScheduleId: Mapped[int] = mapped_column(primary_key= True)
+    offerId: Mapped[int] = mapped_column(
+        ForeignKey("offer.offerId")
+    )
+    dayOfWeek: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    offer: Mapped["Offer"] = relationship(
+        "Offer",
+        back_populates="schedules"
+    )
 
 class Favorite(db.Model):
     __tablename__ = "favorite"

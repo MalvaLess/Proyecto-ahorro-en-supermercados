@@ -88,7 +88,20 @@ def update_user(user_id, data):
 
     if "email" in data:
         new_email = data["email"].strip().lower()
+    
+    if "password" in data:
+        password = data["password"]
 
+        if len(password) < 6:
+            return None, {
+                "message": "La contraseña debe tener al menos 6 caracteres"
+            }, 400
+        
+        user.set_password(password)
+        
+    if "isActive" in data:
+        user.isActive = data["isActive"]
+ 
         existing_user = User.query.filter(
             User.email == new_email,
             User.userId != user.userId
