@@ -297,6 +297,35 @@ class StoreProduct(db.Model):
         db.UniqueConstraint("storeId", "productId", name="uq_store_product"),
     )
 
+    def to_dict(self):
+        return {
+            "storeProductId": self.storeProductId,
+            "storeId": self.storeId,
+            "store": {
+                "storeId": self.store.storeId,
+                "address": self.store.address,
+                "chain": {
+                    "storeChainId": self.store.chain.storeChainId,
+                    "name": self.store.chain.name
+                } if self.store and self.store.chain else None
+            } if self.store else None,
+            "productId": self.productId,
+            "product": {
+                "productId": self.product.productId,
+                "name": self.product.name,
+                "normalizedName": self.product.normalizedName,
+                "brand": {
+                    "brandId": self.product.brand.brandId,
+                    "name": self.product.brand.name
+                } if self.product and self.product.brand else None
+            } if self.product else None,
+            "externalSku": self.externalSku,
+            "externalName": self.externalName,
+            "externalBrand": self.externalBrand,
+            "isAvailable": self.isAvailable,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
 
 class PriceSnapshot(db.Model):
     __tablename__ = "price_snapshot"
@@ -307,8 +336,8 @@ class PriceSnapshot(db.Model):
     price: Mapped[Decimal] = mapped_column(
         Numeric(precision=10, scale=2), nullable=False
     )
-    currency: Mapped[str] = mapped_column(String(50), nullable=False)
-    capturedAt: Mapped[datetime] = mapped_column()
+    currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
+    capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     source: Mapped[str] = mapped_column(
         String(10), nullable=False, default="SCRAPER"
@@ -317,6 +346,31 @@ class PriceSnapshot(db.Model):
     storeProduct: Mapped["StoreProduct"] = relationship(
         "StoreProduct", back_populates="prices"
     )
+
+    def to_dict(self):
+        return {
+            "priceSnapshotId": self.priceSnapshotId,
+            "storeProductId": self.storeProductId,
+            "price": self.price,
+            "currency": self.currency,
+            "capturedAt": self.capturedAt,
+            "createdAt": self.createdAt,
+            "storeProduct": {
+                "storeProductId": self.storeProduct.storeProductId,
+                "product": {
+                    "productId": self.storeProduct.product.productId,
+                    "name": self.storeProduct.product.name
+                } if self.storeProduct.product else None,
+                "store": {
+                    "storeId": self.storeProduct.store.storeId,
+                    "address": self.storeProduct.store.address,
+                    "chain": {
+                        "storeChainId": self.storeProduct.store.chain.storeChainId,
+                        "name": self.storeProduct.store.chain.name
+                    } if self.storeProduct.store.chain else None
+                } if self.storeProduct.store else None
+            } if self.storeProduct else None
+        }
 
 
 class Offer(db.Model):
@@ -332,7 +386,7 @@ class Offer(db.Model):
         nullable=True, 
         default=0
     )
-    currency: Mapped[str] = mapped_column(String(10), nullable=True)
+    currency: Mapped[str] = mapped_column(String(10), nullable=True, default="UYU")
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
@@ -357,6 +411,14 @@ class OfferSchedule(db.Model):
         ForeignKey("offer.offerId")
     )
     dayOfWeek: Mapped[int] = mapped_column(Integer, nullable=False)
+    #1 = Lunes
+    #2 = Martes
+    #3 = Miércoles
+    #4 = Jueves
+    #5 = Viernes
+    #6 = Sábado
+    #7 = Domingo
+
 
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
