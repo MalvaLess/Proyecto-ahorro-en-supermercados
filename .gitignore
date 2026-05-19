@@ -14,4 +14,4 @@ build/
 npm-debug.log*
 
 # VS Code
-.vscode/backend/CKAN/precios_2026.csv
+backend/CKAN/precios_2026.csv

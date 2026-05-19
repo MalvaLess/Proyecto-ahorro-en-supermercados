@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, Numeric, String, ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -167,16 +168,16 @@ class Product(db.Model):
     externalIdCkan: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )  # id.producto en CKAN
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    normalizedName: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    normalizedName: Mapped[str] = mapped_column(String(50), nullable=False)
     ean: Mapped[str] = mapped_column(String(50), nullable=True)
-    description: Mapped[str] = mapped_column(String(255), nullable=True)
+    description: Mapped[str] = mapped_column(String(50), nullable=True)
     weightValue: Mapped[float] = mapped_column(
         Numeric(precision=10, scale=2), nullable=True
     )
     unit: Mapped[str] = mapped_column(String(5), nullable=False)
     format: Mapped[str] = mapped_column(String(50), nullable=True)
-    imageURL: Mapped[str] = mapped_column(String(500), nullable=True)
+    imageURL: Mapped[str] = mapped_column(String(255), nullable=True)
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
@@ -336,6 +337,8 @@ class PriceSnapshot(db.Model):
     price: Mapped[Decimal] = mapped_column(
         Numeric(precision=10, scale=2), nullable=False
     )
+    currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
+    capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
     currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
     capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
