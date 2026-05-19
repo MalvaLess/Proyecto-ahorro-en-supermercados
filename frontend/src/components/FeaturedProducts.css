@@ -1,26 +1,21 @@
 .products {
-  padding: 100px 120px;
-
+  padding: 100px 180px;
   background-color: #f7f9f7;
 }
 
 .products-header {
   text-align: center;
-
   margin-bottom: 50px;
 }
 
 .products-header h2 {
   font-size: 42px;
-
   margin-bottom: 10px;
-
   color: #1f1f1f;
 }
 
 .products-header p {
   color: #666;
-
   font-size: 18px;
 }
 
@@ -28,23 +23,16 @@
   display: flex;
   justify-content: center;
   gap: 30px;
-
   flex-wrap: wrap;
 }
 
 .product-card {
   background-color: white;
-
   width: 300px;
-
   border-radius: 20px;
-
   overflow: hidden;
-
   box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-
   transition: 0.3s;
-
   text-align: center;
 }
 
@@ -54,47 +42,32 @@
 
 .product-card img {
   width: 100%;
-
   height: 220px;
-
   object-fit: cover;
 }
 
 .product-card h3 {
   margin-top: 20px;
-
   font-size: 24px;
-
   color: #1f1f1f;
 }
 
 .product-card p {
   margin: 15px 0;
-
   color: #2e7d32;
-
   font-size: 22px;
-
   font-weight: bold;
 }
 
 .product-card button {
   margin-bottom: 25px;
-
   padding: 12px 24px;
-
   border: none;
-
   border-radius: 30px;
-
   background-color: #2e7d32;
-
   color: white;
-
   cursor: pointer;
-
   font-weight: bold;
-
   transition: 0.3s;
 }
 

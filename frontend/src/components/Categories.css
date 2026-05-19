@@ -1,67 +1,71 @@
-.categories {
-  padding: 100px 120px;
-
-  background-color: white;
-}
-
-.categories-header {
+.categories-section {
+  margin-bottom: 90px;
   text-align: center;
-
-  margin-bottom: 50px;
+  
 }
 
-.categories-header h2 {
+/* TÍTULO */
+
+.categories-section h2 {
   font-size: 42px;
-
-  margin-bottom: 10px;
-
   color: #1f1f1f;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.categories-header p {
+.categories-section p{
+  font-size: 20px;
   color: #666;
 
-  font-size: 18px;
 }
+
+
+
+/* GRID */
 
 .categories-grid {
   display: flex;
+  margin-top: 50px;
   justify-content: center;
-  gap: 25px;
-
   flex-wrap: wrap;
+  gap: 30px;
 }
+
+/* CARD */
 
 .category-card {
   width: 180px;
-
-  background-color: #f7f9f7;
-
-  padding: 30px 20px;
-
-  border-radius: 20px;
-
-  text-align: center;
-
+  height: 180px;
+  background-color: white;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #1f1f1f;
   transition: 0.3s;
-
-  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
 }
+
+/* HOVER */
 
 .category-card:hover {
-  transform: translateY(-6px);
-
-  background-color: #eef7ee;
+  transform: translateY(-8px);
+  background-color: #6eb36ebd;
+  color: white;
 }
+
+/* ICONO */
 
 .category-icon {
-  font-size: 50px;
-
-  margin-bottom: 15px;
+  font-size: 48px;
+  margin-bottom: 18px;
 }
 
-.category-card h3 {
-  color: #1f1f1f;
+/* TEXTO */
 
+.category-card h3 {
   font-size: 20px;
+  font-weight: 600;
 }

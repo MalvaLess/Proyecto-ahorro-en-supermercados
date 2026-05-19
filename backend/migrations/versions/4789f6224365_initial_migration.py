@@ -1,8 +1,8 @@
 """initial migration
 
-Revision ID: 3feb2ff02e23
+Revision ID: 4789f6224365
 Revises: 
-Create Date: 2026-05-06 22:08:25.923196
+Create Date: 2026-05-12 20:02:03.061063
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3feb2ff02e23'
+revision = '4789f6224365'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,14 +22,14 @@ def upgrade():
     sa.Column('brandId', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('brandId')
     )
     op.create_table('category',
     sa.Column('categoryId', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('categoryId')
     )
     op.create_table('store_chain',
@@ -37,25 +37,26 @@ def upgrade():
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('isActive', sa.Boolean(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('storeChainId')
     )
-    op.create_table('user',
+    op.create_table('users',
     sa.Column('userId', sa.Integer(), nullable=False),
     sa.Column('firstName', sa.String(length=50), nullable=False),
     sa.Column('lastName', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=50), nullable=False),
     sa.Column('passwordHash', sa.String(length=255), nullable=False),
     sa.Column('isActive', sa.Boolean(), nullable=False),
-    sa.Column('lastLoginAt', sa.DateTime(), nullable=False),
+    sa.Column('lastLoginAt', sa.DateTime(), nullable=True),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('userId'),
     sa.UniqueConstraint('email')
     )
     op.create_table('product',
     sa.Column('productId', sa.Integer(), nullable=False),
     sa.Column('brandId', sa.Integer(), nullable=False),
+    sa.Column('externalIdCkan', sa.Integer(), nullable=True),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('normalizedName', sa.String(length=50), nullable=False),
     sa.Column('ean', sa.String(length=50), nullable=True),
@@ -66,7 +67,7 @@ def upgrade():
     sa.Column('imageURL', sa.String(length=255), nullable=True),
     sa.Column('isActive', sa.Boolean(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['brandId'], ['brand.brandId'], ),
     sa.PrimaryKeyConstraint('productId')
     )
@@ -77,19 +78,20 @@ def upgrade():
     sa.Column('subTotal', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('total', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['userId'], ['user.userId'], ),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['userId'], ['users.userId'], ),
     sa.PrimaryKeyConstraint('shoppingListId')
     )
     op.create_table('store',
     sa.Column('storeId', sa.Integer(), nullable=False),
     sa.Column('storeChainId', sa.Integer(), nullable=False),
+    sa.Column('externalIdSipc', sa.Integer(), nullable=True),
     sa.Column('address', sa.String(length=255), nullable=False),
     sa.Column('latitude', sa.Numeric(precision=10, scale=7), nullable=False),
     sa.Column('longitude', sa.Numeric(precision=10, scale=7), nullable=False),
     sa.Column('isActive', sa.Boolean(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['storeChainId'], ['store_chain.storeChainId'], ),
     sa.PrimaryKeyConstraint('storeId')
     )
@@ -97,10 +99,11 @@ def upgrade():
     sa.Column('favoriteId', sa.Integer(), nullable=False),
     sa.Column('userId', sa.Integer(), nullable=False),
     sa.Column('productId', sa.Integer(), nullable=False),
-    sa.Column('createdAt', sa.DateTime(), nullable=False),
+    sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['productId'], ['product.productId'], ),
-    sa.ForeignKeyConstraint(['userId'], ['user.userId'], ),
-    sa.PrimaryKeyConstraint('favoriteId')
+    sa.ForeignKeyConstraint(['userId'], ['users.userId'], ),
+    sa.PrimaryKeyConstraint('favoriteId'),
+    sa.UniqueConstraint('userId', 'productId', name='uq_user_product_favorite')
     )
     op.create_table('product_category',
     sa.Column('productCategoryId', sa.Integer(), nullable=False),
@@ -108,21 +111,23 @@ def upgrade():
     sa.Column('categoryId', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['categoryId'], ['category.categoryId'], ),
     sa.ForeignKeyConstraint(['productId'], ['product.productId'], ),
-    sa.PrimaryKeyConstraint('productCategoryId')
+    sa.PrimaryKeyConstraint('productCategoryId'),
+    sa.UniqueConstraint('productId', 'categoryId', name='uq_product_category')
     )
     op.create_table('store_product',
     sa.Column('storeProductId', sa.Integer(), nullable=False),
     sa.Column('storeId', sa.Integer(), nullable=False),
     sa.Column('productId', sa.Integer(), nullable=False),
     sa.Column('externalSku', sa.String(length=50), nullable=True),
-    sa.Column('externalName', sa.String(length=50), nullable=True),
+    sa.Column('externalName', sa.String(length=255), nullable=True),
     sa.Column('externalBrand', sa.String(length=50), nullable=True),
     sa.Column('isAvailable', sa.Boolean(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['productId'], ['product.productId'], ),
     sa.ForeignKeyConstraint(['storeId'], ['store.storeId'], ),
-    sa.PrimaryKeyConstraint('storeProductId')
+    sa.PrimaryKeyConstraint('storeProductId'),
+    sa.UniqueConstraint('storeId', 'productId', name='uq_store_product')
     )
     op.create_table('price_snapshot',
     sa.Column('priceSnapshotId', sa.Integer(), nullable=False),
@@ -131,6 +136,7 @@ def upgrade():
     sa.Column('currency', sa.String(length=50), nullable=False),
     sa.Column('capturedAt', sa.DateTime(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('source', sa.String(length=10), nullable=False),
     sa.ForeignKeyConstraint(['storeProductId'], ['store_product.storeProductId'], ),
     sa.PrimaryKeyConstraint('priceSnapshotId')
     )
@@ -143,7 +149,7 @@ def upgrade():
     sa.Column('unitPrice', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('totalPrice', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
+    sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['productId'], ['product.productId'], ),
     sa.ForeignKeyConstraint(['selectedStoreProductId'], ['store_product.storeProductId'], ),
     sa.ForeignKeyConstraint(['shoppingListId'], ['shopping_list.shoppingListId'], ),
@@ -162,7 +168,7 @@ def downgrade():
     op.drop_table('store')
     op.drop_table('shopping_list')
     op.drop_table('product')
-    op.drop_table('user')
+    op.drop_table('users')
     op.drop_table('store_chain')
     op.drop_table('category')
     op.drop_table('brand')

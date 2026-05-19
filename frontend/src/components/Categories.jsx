@@ -1,40 +1,75 @@
 import './Categories.css'
 
-function Categories() {
-  return (
-    <section className="categories">
+import { Link } from 'react-router-dom'
 
-      <div className="categories-header">
-        <h2>Categorías</h2>
-        <p>Explora productos por categoría</p>
-      </div>
+function CategoriesSection() {
+
+  const categories = [
+
+    {
+      name: 'Lacteos',
+      icon: '🥛'
+    },
+
+    {
+      name: 'Verduras',
+      icon: '🍅'
+    },
+
+    {
+      name: 'Carnes',
+      icon: '🍖'
+    },
+
+    {
+      name: 'Panaderia',
+      icon: '🍞'
+    },
+
+    {
+      name: 'Bebidas',
+      icon: '🥤'
+    },
+
+    {
+      name: 'Aseo',
+      icon: '🧴'
+    }
+
+  ]
+
+  return (
+
+    <section className="categories-section">
+
+      <h2>Categorías</h2>
+      <p>
+        Compara precios entre supermercados y encuentra la mejor opción.
+      </p>
 
       <div className="categories-grid">
 
-        <div className="category-card">
-          <div className="category-icon">🥦</div>
-          <h3>Verduras</h3>
-        </div>
+        {
+          categories.map((category, index) => (
 
-        <div className="category-card">
-          <div className="category-icon">🍎</div>
-          <h3>Frutas</h3>
-        </div>
+            <Link
+              to={`/products/${category.name.toLowerCase()}`}
+              className="category-card"
+              key={index}
+            >
 
-        <div className="category-card">
-          <div className="category-icon">🥩</div>
-          <h3>Carnes</h3>
-        </div>
+              <span className="category-icon">
+                {category.icon}
+              </span>
 
-        <div className="category-card">
-          <div className="category-icon">🥤</div>
-          <h3>Bebidas</h3>
-        </div>
+              <h3>
+                {category.name}
+              </h3>
 
-        <div className="category-card">
-          <div className="category-icon">🍪</div>
-          <h3>Snacks</h3>
-        </div>
+            </Link>
+
+          ))
+        }
 
       </div>
 
@@ -42,4 +77,4 @@ function Categories() {
   )
 }
 
-export default Categories
+export default CategoriesSection

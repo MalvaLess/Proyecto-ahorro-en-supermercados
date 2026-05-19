@@ -1,15 +1,12 @@
 .footer {
   background-color: #1f1f1f;
-
   color: white;
-
   padding: 80px 120px;
 }
 
 .footer-container {
   display: flex;
   justify-content: space-between;
-
   gap: 50px;
 
   flex-wrap: wrap;
@@ -21,19 +18,16 @@
 
 .footer-brand h2 {
   margin-bottom: 20px;
-
   color: #4caf50;
 }
 
 .footer-brand p {
   color: #cfcfcf;
-
   line-height: 1.6;
 }
 
 .footer-links {
   display: flex;
-
   gap: 80px;
 }
 
@@ -47,11 +41,8 @@
 
 .footer-links li {
   margin-bottom: 12px;
-
   color: #cfcfcf;
-
   cursor: pointer;
-
   transition: 0.3s;
 }
 

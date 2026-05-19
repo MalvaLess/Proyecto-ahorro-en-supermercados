@@ -1,4 +1,4 @@
-import './Products.css'
+import './FeaturedProducts.css'
 
 function Products() {
   return (
