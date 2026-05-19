@@ -15,18 +15,6 @@ def parse_decimal(value, field_name):
     except (InvalidOperation, ValueError):
         raise ValueError(f"El campo {field_name} debe ser númerico")
 
-
-def parse_datetime(value):
-    if value is None or str(value).strip() == "":
-        return datetime.now(timezone.utc)
-    
-    try:
-        return datetime.fromisoformat(value)
-    
-    except ValueError:
-        raise ValueError("capturedAt debe tener formato ISO, ejemplo: 2026-05-15T10:30:00")
-    
-
 def get_price_snapshots(
         store_product_id=None,
         page=1,
@@ -109,7 +97,7 @@ def create_price_snapshot(data):
             "message": str(error)
         }, 400
     
-    except IntegrityError:
+    except IntegrityError as error:
         db.session.rollback()
         return None, {
             "message": "No se pudo crear el registro de precio por una restricción de integridad"

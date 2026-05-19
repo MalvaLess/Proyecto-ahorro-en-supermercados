@@ -462,6 +462,17 @@ class ShoppingList(db.Model):
         "ShoppingListItem", back_populates="shoppingList"
     )
 
+    def to_dict(self):
+        return {
+            "shoppingListId": self.shoppingListId,
+            "userId": self.userId,
+            "name": self.name,
+            "subTotal": float(self.subTotal) if self.subTotal is not None else 0,
+            "total": float(self.total) if self.total is not None else 0,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
+
 
 class ShoppingListItem(db.Model):
     __tablename__ = "shopping_list_item"
@@ -498,3 +509,36 @@ class ShoppingListItem(db.Model):
     selectedStoreProduct: Mapped["StoreProduct"] = relationship(
         "StoreProduct", back_populates="shoppingListItems"
     )
+
+    def to_dict(self):
+        return {
+            "shoppingListItemId": self.shoppingListItemId,
+            "shoppingListId": self.shoppingListId,
+            "productId": self.productId,
+            "product": {
+                "productId": self.product.productId,
+                "name": self.product.name,
+                "normalizedName": self.product.normalizedName,
+                "brand": {
+                    "brandId": self.product.brand.brandId,
+                    "name": self.product.brand.name
+                } if self.product and self.product.brand else None
+            } if self.product else None,
+            "selectedStoreProductId": self.selectedStoreProductId,
+            "selectedStoreProduct": {
+                "storeProductId": self.selectedStoreProduct.storeProductId,
+                "store": {
+                    "storeId": self.selectedStoreProduct.store.storeId,
+                    "address": self.selectedStoreProduct.store.address,
+                    "chain": {
+                        "storeChainId": self.selectedStoreProduct.store.chain.storeChainId,
+                        "name": self.selectedStoreProduct.store.chain.name
+                    } if self.selectedStoreProduct.store and self.selectedStoreProduct.store.chain else None
+                } if self.selectedStoreProduct.store else None
+            } if self.selectedStoreProduct else None,
+            "quantity": self.quantity,
+            "unitPrice": float(self.unitPrice) if self.unitPrice is not None else 0,
+            "totalPrice": float(self.totalPrice) if self.totalPrice is not None else 0,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }

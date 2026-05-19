@@ -17,6 +17,10 @@ from routes.product_routes import product_bp
 from routes.store_chain_routes import store_chain_bp
 from routes.store_routes import store_bp
 from routes.store_product_routes import store_product_bp
+from routes.price_snapshot_routes import price_snapshot_bp
+from routes.price_comparison_routes import price_comparison_bp
+from routes.shopping_list_routes import shopping_list_bp
+from routes.shopping_list_item_routes import shopping_list_item_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -42,7 +46,11 @@ app.register_blueprint(category_bp, url_prefix="/api/categories")
 app.register_blueprint(product_bp, url_prefix="/api/products")
 app.register_blueprint(store_chain_bp, url_prefix="/api/store-chain")
 app.register_blueprint(store_bp, url_prefix="/api/stores")
-app.register_blueprint(store_product_bp, url_prefix="/api/stores-products")
+app.register_blueprint(store_product_bp, url_prefix="/api/store-products")
+app.register_blueprint(price_snapshot_bp, url_prefix="/api/price-snapshots")
+app.register_blueprint(price_comparison_bp, url_prefix="/api/price-comparison")
+app.register_blueprint(shopping_list_bp, url_prefix="/api/shopping-lists")
+app.register_blueprint(shopping_list_item_bp, url_prefix="/api/shopping-lists")
 
 @app.route("/")
 def main():
