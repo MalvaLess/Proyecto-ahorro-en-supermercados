@@ -15,3 +15,4 @@ npm-debug.log*
 
 # VS Code
 backend/CKAN/precios_2026.csv
+**/__pycache__/

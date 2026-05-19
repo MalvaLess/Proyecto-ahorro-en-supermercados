@@ -1,5 +1,8 @@
 import sys
 import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from dotenv import load_dotenv
 from datetime import timedelta
 
@@ -17,8 +20,6 @@ from routes.product_routes import product_bp
 from routes.store_chain_routes import store_chain_bp
 from routes.store_routes import store_bp
 from routes.store_product_routes import store_product_bp
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
 
 app = Flask(__name__)
