@@ -38,17 +38,8 @@ def compare_product_prices(product_id, chain_ids=None):
             "message": "Producto no encontrado"
         }, 404
 
-    # Incluir variantes scraped del mismo producto base (ej: "aceite de girasol optimo 900ml")
-    related_ids = [product_id]
-    if product.normalizedName:
-        variantes = Product.query.filter(
-            Product.normalizedName.ilike(f"{product.normalizedName} %"),
-            Product.productId != product_id
-        ).all()
-        related_ids += [p.productId for p in variantes]
-
     query = StoreProduct.query.filter(
-        StoreProduct.productId.in_(related_ids),
+        StoreProduct.productId == product_id,
         StoreProduct.isAvailable == True
     )
 

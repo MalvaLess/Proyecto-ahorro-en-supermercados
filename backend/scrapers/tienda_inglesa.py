@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import json
+import re
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -23,6 +24,8 @@ from models.models import (
     StoreChain,
 )
 from datetime import datetime
+from sqlalchemy import literal, func
+from utils import normalize_brand
 
 STORE_CHAIN_NAME = "Tienda Inglesa"
 TI_BASE = "https://www.tiendainglesa.com.uy"
@@ -157,15 +160,32 @@ def guardar_en_db(productos, categoria_nombre=None):
                     normalizedName=p["nombre_externo"].lower()
                 ).first()
 
+            # Fallback: nombre scraper empieza con normalizedName CKAN + misma marca
+            # Valida que lo que sigue al prefijo sea la marca o un número (no otro calificador de producto)
+            if not product:
+                brand_norm = normalize_brand(p.get("brand") or "")
+                if brand_norm:
+                    scraper_name_lower = p["nombre_externo"].lower()
+                    candidates = Product.query.join(Brand).filter(
+                        literal(scraper_name_lower).op("LIKE")(func.concat(Product.normalizedName, "%")),
+                        Brand.normalizedName == brand_norm
+                    ).order_by(func.length(Product.normalizedName).desc()).all()
+                    for candidate in candidates:
+                        suffix = scraper_name_lower[len(candidate.normalizedName):].strip()
+                        first_word = suffix.split()[0] if suffix else ""
+                        if not first_word or first_word == brand_norm or re.match(r'^\d', first_word):
+                            product = candidate
+                            break
+
             # Si encontró producto CKAN sin EAN, enriquecerlo con el EAN scrapeado
             if product and p.get("ean") and not product.ean:
                 product.ean = p["ean"]
 
             if not product:
                 brand_name = p.get("brand") or STORE_CHAIN_NAME
-                brand = Brand.query.filter_by(name=brand_name).first()
+                brand = Brand.query.filter_by(normalizedName=normalize_brand(brand_name)).first()
                 if not brand:
-                    brand = Brand(name=brand_name, updatedAt=datetime.now())
+                    brand = Brand(name=brand_name, normalizedName=normalize_brand(brand_name), updatedAt=datetime.now())
                     db.session.add(brand)
                     db.session.flush()
 

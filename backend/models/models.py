@@ -122,6 +122,7 @@ class Brand(db.Model):
     __tablename__ = "brand"
     brandId: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
+    normalizedName: Mapped[str] = mapped_column(String(50), nullable=True, index=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()

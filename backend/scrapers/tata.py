@@ -2,6 +2,7 @@ import requests
 import time
 import sys
 import os
+import re
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -22,6 +23,8 @@ from models.models import (
     StoreChain,
 )
 from datetime import datetime
+from sqlalchemy import literal, func
+from utils import normalize_brand
 
 ENDPOINT = "https://www.tata.com.uy/api/graphql"
 STORE_CHAIN_NAME = "Ta-Ta"
@@ -150,11 +153,28 @@ def guardar_en_db(productos):
             # Buscar producto por GTIN en el catálogo normalizado
             product = Product.query.filter_by(ean=p["gtin"]).first()
 
-            # Fallback: buscar por nombre normalizado para linkear con productos CKAN
+            # Fallback 1: buscar por nombre normalizado exacto
             if not product:
                 product = Product.query.filter_by(
                     normalizedName=p["nombre_externo"].lower()
                 ).first()
+
+            # Fallback 2: nombre scraper empieza con normalizedName CKAN + misma marca
+            # Valida que lo que sigue al prefijo sea la marca o un número (no otro calificador de producto)
+            if not product:
+                brand_norm = normalize_brand(p["marca_externa"])
+                if brand_norm:
+                    scraper_name_lower = p["nombre_externo"].lower()
+                    candidates = Product.query.join(Brand).filter(
+                        literal(scraper_name_lower).op("LIKE")(func.concat(Product.normalizedName, "%")),
+                        Brand.normalizedName == brand_norm
+                    ).order_by(func.length(Product.normalizedName).desc()).all()
+                    for candidate in candidates:
+                        suffix = scraper_name_lower[len(candidate.normalizedName):].strip()
+                        first_word = suffix.split()[0] if suffix else ""
+                        if not first_word or first_word == brand_norm or re.match(r'^\d', first_word):
+                            product = candidate
+                            break
 
             # Si encontró producto CKAN sin EAN, enriquecerlo con el GTIN de Ta-Ta
             if product and p["gtin"] and not product.ean:
@@ -162,9 +182,9 @@ def guardar_en_db(productos):
 
             if not product:
                 # No existe en DB, crear producto nuevo con datos de Ta-Ta
-                brand = Brand.query.filter_by(name=p["marca_externa"]).first()
+                brand = Brand.query.filter_by(normalizedName=normalize_brand(p["marca_externa"])).first()
                 if not brand:
-                    brand = Brand(name=p["marca_externa"], updatedAt=datetime.now())
+                    brand = Brand(name=p["marca_externa"], normalizedName=normalize_brand(p["marca_externa"]), updatedAt=datetime.now())
                     db.session.add(brand)
                     db.session.flush()
 

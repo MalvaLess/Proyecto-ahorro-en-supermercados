@@ -11,6 +11,7 @@ import csv
 from app.app import app
 from models.models import db, Brand, Product
 from datetime import datetime
+from utils import normalize_brand
 
 PRODUCTOS_CSV = os.path.join(os.path.dirname(__file__), "CKAN", "productos.csv")
 
@@ -29,9 +30,9 @@ def importar_productos():
                 )
 
                 # Buscar o crear marca
-                brand = Brand.query.filter_by(name=marca_nombre).first()
+                brand = Brand.query.filter_by(normalizedName=normalize_brand(marca_nombre)).first()
                 if not brand:
-                    brand = Brand(name=marca_nombre, updatedAt=datetime.now())
+                    brand = Brand(name=marca_nombre, normalizedName=normalize_brand(marca_nombre), updatedAt=datetime.now())
                     db.session.add(brand)
                     db.session.flush()
 
