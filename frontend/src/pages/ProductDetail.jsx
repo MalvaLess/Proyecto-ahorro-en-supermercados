@@ -1,4 +1,4 @@
-function ProductsDetail() {
+function ProductDetail() {
   return (
     <div>
       <h1>Productos</h1>
@@ -6,4 +6,4 @@ function ProductsDetail() {
   )
 }
 
-export default Products
+export default ProductDetail  // corregido: nombre de función y export no coincidían

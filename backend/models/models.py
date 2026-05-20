@@ -142,7 +142,7 @@ class Category(db.Model):
     __tablename__ = "category"
 
     categoryId: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
@@ -157,7 +157,7 @@ class Category(db.Model):
             "categoryId": self.categoryId,
             "name": self.name,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -348,8 +348,7 @@ class PriceSnapshot(db.Model):
     )
     currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
     capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
-    currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
-    capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    # eliminadas definiciones duplicadas de currency y capturedAt
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     source: Mapped[str] = mapped_column(
         String(10), nullable=False, default="SCRAPER"

@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -13,7 +14,9 @@ from app.app import app
 from models.models import (
     db,
     Brand,
+    Category,
     Product,
+    ProductCategory,
     StoreProduct,
     PriceSnapshot,
     Store,
@@ -22,58 +25,40 @@ from models.models import (
 from datetime import datetime
 
 STORE_CHAIN_NAME = "Tienda Inglesa"
-BASE_URL = "https://www.tiendainglesa.com.uy/supermercado/busqueda?0,0,{termino},0,0,0,,,false,,,,{pagina}"
 TI_BASE = "https://www.tiendainglesa.com.uy"
 
-TERMINOS = [
-    "aceite",
-    "leche",
-    "arroz",
-    "azucar",
-    "harina",
-    "fideos",
-    "pan",
-    "yerba",
-    "cafe",
-    "te",
-    "agua",
-    "jugo",
-    "gaseosa",
-    "cerveza",
-    "vino",
-    "carne",
-    "pollo",
-    "pescado",
-    "huevo",
-    "queso",
-    "yogur",
-    "manteca",
-    "margarina",
-    "mayonesa",
-    "ketchup",
-    "sal",
-    "pimienta",
-    "detergente",
-    "jabon",
-    "papel",
+TI_CATEGORIAS = [
+    {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/almacen/78",    "nombre": "Almacén"},
+    {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/bebidas/1001",  "nombre": "Bebidas"},
+    {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/frescos/1894",  "nombre": "Frescos"},
+    {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/limpieza/1895", "nombre": "Limpieza"},
+    {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/congelados/181","nombre": "Congelados"},
 ]
 
 
-def extraer_ean(page, product_url):
+def extraer_datos_producto(page, product_url):
     try:
         page.goto(product_url, wait_until="domcontentloaded", timeout=10000)
-        el = page.query_selector("span#TXTPRODUCTBARCODE")
+        el = page.query_selector("script[type='application/ld+json']")
         if el:
-            ean = el.inner_text().strip()
-            if ean:
-                return ean
+            data = json.loads(el.inner_text())
+            return {
+                "ean": data.get("gtin13"),
+                "brand": data.get("brand", {}).get("name"),
+                "sku": data.get("offers", {}).get("sku") or data.get("sku"),
+            }
     except Exception:
         pass
-    return None
+    return {"ean": None, "brand": None, "sku": None}
 
 
-def scrape_pagina(page, termino, pagina_num, _retry=0):
-    url = BASE_URL.format(termino=termino, pagina=pagina_num)
+def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
+    if pagina_num == 0:
+        url = categoria_url
+    else:
+        cat_id = categoria_url.rstrip("/").split("/")[-1]
+        parent_url = categoria_url.rstrip("/").rsplit("/", 1)[0]
+        url = f"{parent_url}/busqueda?0,0,*%3A*,{cat_id},0,0,,,false,,,,{pagina_num}"
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
         try:
@@ -132,6 +117,8 @@ def scrape_pagina(page, termino, pagina_num, _retry=0):
                         "disponible": True,
                         "product_url": product_url,
                         "ean": None,
+                        "brand": None,
+                        "sku": None,
                     }
                 )
             except Exception:
@@ -141,11 +128,11 @@ def scrape_pagina(page, termino, pagina_num, _retry=0):
     except Exception as e:
         if "Cannot find context" in str(e) and _retry < 2:
             time.sleep(2)
-            return scrape_pagina(page, termino, pagina_num, _retry + 1)
+            return scrape_pagina(page, categoria_url, pagina_num, _retry + 1)
         return []
 
 
-def guardar_en_db(productos):
+def guardar_en_db(productos, categoria_nombre=None):
     with app.app_context():
         cadena = StoreChain.query.filter_by(name=STORE_CHAIN_NAME).first()
         if not cadena:
@@ -170,10 +157,15 @@ def guardar_en_db(productos):
                     normalizedName=p["nombre_externo"].lower()
                 ).first()
 
+            # Si encontró producto CKAN sin EAN, enriquecerlo con el EAN scrapeado
+            if product and p.get("ean") and not product.ean:
+                product.ean = p["ean"]
+
             if not product:
-                brand = Brand.query.filter_by(name=STORE_CHAIN_NAME).first()
+                brand_name = p.get("brand") or STORE_CHAIN_NAME
+                brand = Brand.query.filter_by(name=brand_name).first()
                 if not brand:
-                    brand = Brand(name=STORE_CHAIN_NAME, updatedAt=datetime.now())
+                    brand = Brand(name=brand_name, updatedAt=datetime.now())
                     db.session.add(brand)
                     db.session.flush()
 
@@ -198,7 +190,9 @@ def guardar_en_db(productos):
                 store_product = StoreProduct(
                     storeId=store_id,
                     productId=product.productId,
+                    externalSku=p.get("sku"),
                     externalName=p["nombre_externo"],
+                    externalBrand=p.get("brand"),
                     isAvailable=p["disponible"],
                     updatedAt=datetime.now(),
                 )
@@ -206,6 +200,24 @@ def guardar_en_db(productos):
                 db.session.flush()
             else:
                 store_product.isAvailable = p["disponible"]
+                if p.get("sku") and not store_product.externalSku:
+                    store_product.externalSku = p.get("sku")
+                if p.get("brand") and not store_product.externalBrand:
+                    store_product.externalBrand = p.get("brand")
+
+            # Asignar categoría si se conoce
+            if categoria_nombre:
+                categoria = Category.query.filter_by(name=categoria_nombre).first()
+                if categoria:
+                    existe = ProductCategory.query.filter_by(
+                        productId=product.productId,
+                        categoryId=categoria.categoryId
+                    ).first()
+                    if not existe:
+                        db.session.add(ProductCategory(
+                            productId=product.productId,
+                            categoryId=categoria.categoryId
+                        ))
 
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
@@ -249,13 +261,13 @@ if __name__ == "__main__":
         )
         page = context.new_page()
         try:
-            for termino in TERMINOS:
+            for cat in TI_CATEGORIAS:
                 pagina = 0
                 nombres_pagina_anterior = None
-                print(f"\n=== Término: {termino} ===")
+                print(f"\n=== Categoría: {cat['nombre']} ===")
                 while True:
-                    print(f"Scrapeando '{termino}' página {pagina}...")
-                    productos = scrape_pagina(page, termino, pagina)
+                    print(f"Scrapeando '{cat['nombre']}' página {pagina}...")
+                    productos = scrape_pagina(page, cat["url"], pagina)
                     if not productos:
                         print("Sin productos. Fin.")
                         break
@@ -266,7 +278,6 @@ if __name__ == "__main__":
                         break
                     nombres_pagina_anterior = nombres_actuales
 
-                    # A: fetch EANs already in DB to skip page visits
                     eans_db = obtener_eans_existentes(
                         [p["nombre_externo"] for p in productos]
                     )
@@ -282,12 +293,15 @@ if __name__ == "__main__":
                         else:
                             print(f"  EAN {i}/{total}: {prod['nombre_externo'][:50]}")
                             if prod.get("product_url"):
-                                prod["ean"] = extraer_ean(page, prod["product_url"])
-                            time.sleep(0.1)  # C: reduced from 0.5
+                                datos = extraer_datos_producto(page, prod["product_url"])
+                                prod["ean"] = datos["ean"]
+                                prod["brand"] = datos["brand"]
+                                prod["sku"] = datos["sku"]
+                            time.sleep(0.1)
 
-                    guardar_en_db(productos)
+                    guardar_en_db(productos, cat["nombre"])
                     pagina += 1
-                    time.sleep(0.8)  # C: reduced from 2
+                    time.sleep(0.8)
         finally:
             context.close()
             browser.close()

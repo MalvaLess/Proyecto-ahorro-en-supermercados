@@ -6,4 +6,4 @@ function Cart() {
   )
 }
 
-export default Products
+export default Cart  // corregido: export apuntaba a "Products" en vez de "Cart"

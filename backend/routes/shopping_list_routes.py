@@ -14,6 +14,7 @@ shopping_list_bp = Blueprint("shopping_lists", __name__)
 
 
 @shopping_list_bp.route("/", methods=["GET"])
+@jwt_required()  # corregido: faltaba decorador, cualquiera podía listar listas ajenas
 def list_shopping_lists():
     user_id = int(get_jwt_identity())
 

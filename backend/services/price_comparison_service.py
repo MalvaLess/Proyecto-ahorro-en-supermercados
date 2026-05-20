@@ -1,26 +1,23 @@
-from models.models import db, Product, StoreProduct, PriceSnapshot
+from models.models import db, Product, StoreProduct, PriceSnapshot, Store
 
 
-def parse_store_ids(store_ids_raw):
-    if store_ids_raw is None or store_ids_raw.strip() == "":
+def parse_chain_ids(chain_ids_raw):
+    if chain_ids_raw is None or chain_ids_raw.strip() == "":
         return None, None
 
     try:
-        store_ids = []
+        chain_ids = []
 
-        stores_raw_list = store_ids_raw.split(",")
+        for part in chain_ids_raw.split(","):
+            clean = part.strip()
+            if clean:
+                chain_ids.append(int(clean))
 
-        for store_id in stores_raw_list:
-            clean_store_id = store_id.strip()
-
-            if clean_store_id != "":
-                store_ids.append(int(clean_store_id))
-
-        return store_ids, None
+        return chain_ids, None
 
     except ValueError:
         return None, {
-            "message": "storeIds debe ser una lista de números separados por coma. Ejemplo: storeIds=1,2,3"
+            "message": "storeChainIds debe ser una lista de números separados por coma. Ejemplo: storeChainIds=1,2,3"
         }
 
 
@@ -33,7 +30,7 @@ def get_latest_price(store_product_id):
     ).first()
 
 
-def compare_product_prices(product_id, store_ids=None):
+def compare_product_prices(product_id, chain_ids=None):
     product = db.session.get(Product, product_id)
 
     if product is None:
@@ -41,33 +38,71 @@ def compare_product_prices(product_id, store_ids=None):
             "message": "Producto no encontrado"
         }, 404
 
+    # Incluir variantes scraped del mismo producto base (ej: "aceite de girasol optimo 900ml")
+    related_ids = [product_id]
+    if product.normalizedName:
+        variantes = Product.query.filter(
+            Product.normalizedName.ilike(f"{product.normalizedName} %"),
+            Product.productId != product_id
+        ).all()
+        related_ids += [p.productId for p in variantes]
+
     query = StoreProduct.query.filter(
-        StoreProduct.productId == product_id,
+        StoreProduct.productId.in_(related_ids),
         StoreProduct.isAvailable == True
     )
 
-    if store_ids:
-        query = query.filter(StoreProduct.storeId.in_(store_ids))
+    if chain_ids:
+        store_ids_for_chains = [
+            s.storeId for s in Store.query.filter(Store.storeChainId.in_(chain_ids)).all()
+        ]
+        query = query.filter(StoreProduct.storeId.in_(store_ids_for_chains))
 
     store_products = query.all()
 
-    items = []
+    # Agrupar por cadena: preferir precio SCRAPER, sino mínimo CKAN
+    cadenas = {}
 
     for store_product in store_products:
         latest_price = get_latest_price(store_product.storeProductId)
+        if not latest_price:
+            continue
 
-        items.append({
+        chain = store_product.store.chain if store_product.store else None
+        chain_id = chain.storeChainId if chain else None
+        chain_name = chain.name if chain else None
+        price_val = float(latest_price.price)
+        source = latest_price.source
+
+        candidate = {
             "storeProductId": store_product.storeProductId,
             "storeId": store_product.storeId,
-            "storeName": store_product.store.chain.name if store_product.store and store_product.store.chain else None,
+            "storeName": chain_name,
             "storeAddress": store_product.store.address if store_product.store else None,
             "externalSku": store_product.externalSku,
             "externalName": store_product.externalName,
             "externalBrand": store_product.externalBrand,
-            "price": float(latest_price.price) if latest_price else None,
-            "currency": latest_price.currency if latest_price else None,
-            "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
-        })
+            "price": price_val,
+            "currency": latest_price.currency,
+            "capturedAt": latest_price.capturedAt.isoformat() if latest_price.capturedAt else None,
+            "source": source,
+        }
+
+        existing = cadenas.get(chain_id)
+        if not existing:
+            cadenas[chain_id] = candidate
+        else:
+            # SCRAPER gana sobre CKAN; entre mismo source, precio más bajo
+            existing_scraper = existing["source"] == "SCRAPER"
+            new_scraper = source == "SCRAPER"
+            if new_scraper and not existing_scraper:
+                cadenas[chain_id] = candidate
+            elif not new_scraper and existing_scraper:
+                pass
+            elif price_val < existing["price"]:
+                cadenas[chain_id] = candidate
+
+    items = list(cadenas.values())
 
     items.sort(
         key=lambda item: (

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from services.price_comparison_service import (
-    parse_store_ids,
+    parse_chain_ids,
     compare_product_prices
 )
 
@@ -10,9 +10,9 @@ price_comparison_bp = Blueprint("price_comparison", __name__)
 
 @price_comparison_bp.route("/products/<int:product_id>", methods=["GET"])
 def compare_prices(product_id):
-    store_ids_raw = request.args.get("storeIds")
+    chain_ids_raw = request.args.get("storeChainIds")
 
-    store_ids, parse_error = parse_store_ids(store_ids_raw)
+    chain_ids, parse_error = parse_chain_ids(chain_ids_raw)
 
     if parse_error:
         return jsonify({
@@ -22,7 +22,7 @@ def compare_prices(product_id):
 
     result, error, status_code = compare_product_prices(
         product_id=product_id,
-        store_ids=store_ids
+        chain_ids=chain_ids
     )
 
     if error:
