@@ -439,6 +439,24 @@ class Favorite(db.Model):
         db.UniqueConstraint("userId", "productId", name="uq_user_product_favorite"),
     )
 
+    def to_dict(self):
+        return {
+            "favoriteId": self.favoriteId,
+            "userId": self.userId,
+            "productId": self.productId,
+            "product": {
+                "productId": self.product.productId,
+                "name": self.product.name,
+                "normalizedName": self.product.normalizedName,
+                "imageURL": self.product.imageURL,
+                "brand": {
+                    "brandId": self.product.brand.brandId,
+                    "name": self.product.brand.name
+                } if self.product and self.product.brand else None
+            } if self.product else None,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None
+        }
+
 
 class ShoppingList(db.Model):
     __tablename__ = "shopping_list"
