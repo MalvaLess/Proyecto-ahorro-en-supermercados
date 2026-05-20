@@ -78,3 +78,4 @@ function CategoriesSection() {
 }
 
 export default CategoriesSection
+

@@ -17,6 +17,9 @@
 
 .hero-text {
   max-width: 550px;
+    display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hero-text h1 {
@@ -33,12 +36,13 @@
 }
 
 .hero-text button {
-  padding: 14px 28px;
+  padding: 14px 50px;
   border: none;
   background-color: #2e7d32;
   color: white;
   border-radius: 30px;
   cursor: pointer;
+  
 
   font-weight: bold;
 

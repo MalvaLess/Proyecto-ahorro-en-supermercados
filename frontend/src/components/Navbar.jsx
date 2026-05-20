@@ -2,8 +2,10 @@ import './Navbar.css'
 import { Link } from 'react-router-dom'
 import { FaShoppingCart } from 'react-icons/fa'
 
-function Navbar() {
+function Navbar({ cart = [] }) {
+
   return (
+
     <nav className="navbar">
 
       <div className="logo">
@@ -22,9 +24,21 @@ function Navbar() {
 
         <Link to="/login">Login</Link>
 
-        <div className="cart-icon">
+        <Link to="/cart" className="cart-icon">
+
           <FaShoppingCart />
-        </div>
+
+          {
+            cart?.length > 0 && (
+
+              <span className="cart-count">
+                {cart.length}
+              </span>
+
+            )
+          }
+
+        </Link>
 
       </div>
 
