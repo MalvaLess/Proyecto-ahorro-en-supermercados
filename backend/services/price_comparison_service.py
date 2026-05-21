@@ -86,6 +86,7 @@ def compare_product_prices(product_id, store_ids=None):
                 "currency": active_offer.currency,
                 "isActive": active_offer.isActive
             } if active_offer else None,
+            "finalPrice": float(final_price) if final_price is not None else None,
             "currency": latest_price.currency if latest_price else None,
             "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
         })
