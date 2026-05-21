@@ -86,9 +86,19 @@ def update_user(user_id, data):
     if "lastName" in data:
         user.lastName = data["lastName"].strip()
 
+    # corregido: validación y actualización de email movidas a su propio bloque
     if "email" in data:
         new_email = data["email"].strip().lower()
-    
+        existing_user = User.query.filter(
+            User.email == new_email,
+            User.userId != user.userId
+        ).first()
+        if existing_user:
+            return None, {
+                "message": "Ya existe otro usuario con ese email"
+            }, 409
+        user.email = new_email
+
     if "password" in data:
         password = data["password"]
 
@@ -96,33 +106,21 @@ def update_user(user_id, data):
             return None, {
                 "message": "La contraseña debe tener al menos 6 caracteres"
             }, 400
-        
+
         user.set_password(password)
-        
-    if "isActive" in data:
+
+    if "isActive" in data:  # corregido: ya no contiene lógica de email ni el commit
         user.isActive = data["isActive"]
- 
-        existing_user = User.query.filter(
-            User.email == new_email,
-            User.userId != user.userId
-        ).first()
 
-        if existing_user:
-            return None, {
-                "message": "Ya existe otro usuario con ese email"
-            }, 409
-        
-        user.email = new_email
-
-        try:
-            db.session.commit()
-            return user, None, 200
-        except SQLAlchemyError as error:
-            db.session.rollback()
-            return None, {
-                "message": "Error al actualizar el usuario",
-                "error": str(error)
-            }, 500
+    try:
+        db.session.commit()
+        return user, None, 200
+    except SQLAlchemyError as error:
+        db.session.rollback()
+        return None, {
+            "message": "Error al actualizar el usuario",
+            "error": str(error)
+        }, 500
         
 def deactivate_user(user_id):
     user = get_user_by_id(user_id)
