@@ -418,6 +418,34 @@ class Offer(db.Model):
         "OfferSchedule", back_populates="offer"
     )
 
+    def to_dict(self):
+        return {
+            "offerId": self.offerId,
+            "storeProductId": self.storeProductId,
+            "storeProduct": {
+                "storeProductId": self.storeProduct.storeProductId,
+                "product": {
+                    "productId": self.storeProduct.product.productId,
+                    "name": self.storeProduct.product.name
+                } if self.storeProduct.product else None,
+                "store": {
+                    "storeId": self.storeProduct.store.storeId,
+                    "address": self.storeProduct.store.address,
+                    "chain": {
+                        "storeChainId": self.storeProduct.store.chain.storeChainId,
+                        "name": self.storeProduct.store.chain.name
+                    } if self.storeProduct.store.chain else None
+                } if self.storeProduct.store else None
+            } if self.storeProduct else None,
+            "offerType": self.offerType,
+            "offerPrice": float(self.offerPrice) if self.offerPrice is not None else None,
+            "currency": self.currency,
+            "firstSeenAt": self.firstSeenAt.isoformat() if hasattr(self, "firstSeenAt") and self.firstSeenAt else None,
+            "lastSeenAt": self.lastSeenAt.isoformat() if hasattr(self, "lastSeenAt") and self.lastSeenAt else None,
+            "isActive": self.isActive,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+        }
 
 class OfferSchedule(db.Model):
     __tablename__ = "offer_schedule"

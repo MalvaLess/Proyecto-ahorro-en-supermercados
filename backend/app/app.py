@@ -25,6 +25,7 @@ from routes.price_comparison_routes import price_comparison_bp
 from routes.shopping_list_routes import shopping_list_bp
 from routes.shopping_list_item_routes import shopping_list_item_bp
 from routes.favorite_routes import favorite_bp
+from routes.offer_routes import offer_bp
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
@@ -56,6 +57,7 @@ app.register_blueprint(price_comparison_bp, url_prefix="/api/price-comparison")
 app.register_blueprint(shopping_list_bp, url_prefix="/api/shopping-lists")
 app.register_blueprint(shopping_list_item_bp, url_prefix="/api/shopping-lists")
 app.register_blueprint(favorite_bp, url_prefix="/api/favorites")
+app.register_blueprint(offer_bp, url_prefix="/api/offers")
 
 @app.route("/")
 def main():
