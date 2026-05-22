@@ -448,13 +448,19 @@ class OfferSchedule(db.Model):
     #6 = Sábado
     #7 = Domingo
 
-
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
     offer: Mapped["Offer"] = relationship(
         "Offer",
         back_populates="schedules"
     )
+
+    def to_dict(self):
+        return {
+            "offerScheduleId": self.offerScheduleId,
+            "offerId": self.offerId,
+            "dayOfWeek": self.dayOfWeek
+        }
 
 class Favorite(db.Model):
     __tablename__ = "favorite"
