@@ -418,6 +418,18 @@ class Offer(db.Model):
         "OfferSchedule", back_populates="offer"
     )
 
+    def to_dict(self):
+        return {
+            "offerId": self.offerId,
+            "storeProductId": self.storeProductId,
+            "offerType": self.offerType,
+            "offerPrice": float(self.offerPrice) if self.offerPrice is not None else None,
+            "currency": self.currency,
+            "isActive": self.isActive,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
+        }
+
 
 class OfferSchedule(db.Model):
     __tablename__ = "offer_schedule"

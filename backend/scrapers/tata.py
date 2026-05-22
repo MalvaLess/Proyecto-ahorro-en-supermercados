@@ -15,6 +15,7 @@ from models.models import (
     db,
     Brand,
     Category,
+    Offer,
     Product,
     ProductCategory,
     StoreProduct,
@@ -24,10 +25,16 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
-from utils import normalize_brand
+from utils import normalize_brand, jaccard_similarity, same_size
 
 ENDPOINT = "https://www.tata.com.uy/api/graphql"
 STORE_CHAIN_NAME = "Ta-Ta"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+}
 
 TATA_CATEGORIAS = {
     "congelados": "Congelados",
@@ -85,6 +92,10 @@ query ProductsQuery(
 }
 """
 
+def _ean13_valido(code):
+    return bool(code and len(str(code)) == 13 and str(code).isdigit())
+
+
 def scrape_categoria(category_slug, pagina=0, cantidad=50):
     payload = {
         "operationName": "ProductsQuery",
@@ -105,7 +116,11 @@ def scrape_categoria(category_slug, pagina=0, cantidad=50):
         "query": QUERY,
     }
 
-    response = requests.post(ENDPOINT, json=payload)
+    try:
+        response = requests.post(ENDPOINT, json=payload, headers=HEADERS, timeout=30)
+    except requests.exceptions.Timeout:
+        print(f"  Timeout en página {pagina}, saltando...")
+        return []
     if response.status_code >= 500:
         return []
     response.raise_for_status()
@@ -123,7 +138,7 @@ def scrape_categoria(category_slug, pagina=0, cantidad=50):
                 "sku": p["sku"],
                 "nombre_externo": p["name"],
                 "marca_externa": p["brand"]["name"],
-                "gtin": p.get("gtin"),
+                "gtin": p.get("gtin") if _ean13_valido(p.get("gtin")) else None,
                 "imagen": p["image"][0]["url"] if p["image"] else None,
                 "precio": oferta["price"],
                 "precio_lista": oferta["listPrice"],
@@ -151,7 +166,7 @@ def guardar_en_db(productos):
 
         for p in productos:
             # Buscar producto por GTIN en el catálogo normalizado
-            product = Product.query.filter_by(ean=p["gtin"]).first()
+            product = Product.query.filter_by(ean=p["gtin"]).first() if p["gtin"] else None
 
             # Fallback 1: buscar por nombre normalizado exacto
             if not product:
@@ -176,6 +191,23 @@ def guardar_en_db(productos):
                             product = candidate
                             break
 
+            # Fallback 4: token overlap (Jaccard ≥ 0.5) dentro de misma marca
+            if not product:
+                brand_norm = normalize_brand(p["marca_externa"])
+                if brand_norm:
+                    candidates = Product.query.join(Brand).filter(
+                        Brand.normalizedName == brand_norm
+                    ).limit(100).all()
+                    best_score, best_candidate = 0.0, None
+                    for candidate in candidates:
+                        if not same_size(p["nombre_externo"], candidate.normalizedName):
+                            continue
+                        score = jaccard_similarity(p["nombre_externo"], candidate.normalizedName)
+                        if score > best_score:
+                            best_score, best_candidate = score, candidate
+                    if best_score >= 0.6:
+                        product = best_candidate
+
             # Si encontró producto CKAN sin EAN, enriquecerlo con el GTIN de Ta-Ta
             if product and p["gtin"] and not product.ean:
                 product.ean = p["gtin"]
@@ -199,6 +231,7 @@ def guardar_en_db(productos):
                 )
                 db.session.add(product)
                 db.session.flush()
+
 
             # Buscar o crear store_product
             store_product = StoreProduct.query.filter_by(
@@ -238,7 +271,31 @@ def guardar_en_db(productos):
                             categoryId=categoria.categoryId
                         ))
 
-            # Siempre insertar nuevo precio
+            # Detectar y registrar oferta cuando precio < precio de lista
+            oferta_existente = Offer.query.filter_by(
+                storeProductId=store_product.storeProductId,
+                offerType="DESCUENTO"
+            ).first()
+
+            if p["precio"] < p["precio_lista"]:
+                if oferta_existente:
+                    oferta_existente.offerPrice = p["precio_lista"]
+                    oferta_existente.isActive = True
+                    oferta_existente.updatedAt = datetime.now()
+                else:
+                    db.session.add(Offer(
+                        storeProductId=store_product.storeProductId,
+                        offerType="DESCUENTO",
+                        offerPrice=p["precio_lista"],
+                        currency="UYU",
+                        isActive=True,
+                        updatedAt=datetime.now(),
+                    ))
+            elif oferta_existente and oferta_existente.isActive:
+                oferta_existente.isActive = False
+                oferta_existente.updatedAt = datetime.now()
+
+            # Siempre insertar nuevo precio (precio actual = lo que paga el cliente)
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
                 price=p["precio"],
@@ -253,7 +310,17 @@ def guardar_en_db(productos):
 
 
 if __name__ == "__main__":
-    for slug, nombre in TATA_CATEGORIAS.items():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", action="store_true", help="Scrapea solo 1 categoría, 1 página")
+    args = parser.parse_args()
+
+    categorias = list(TATA_CATEGORIAS.items())
+    if args.test:
+        categorias = [("almacen", "Almacén")]
+        print("[TEST MODE] categoría: Almacén, 1 página")
+
+    for slug, nombre in categorias:
         pagina = 0
         print(f"\n=== Categoría: {nombre} ===")
         while True:
@@ -264,4 +331,6 @@ if __name__ == "__main__":
                 break
             guardar_en_db(productos)
             pagina += 1
+            if args.test:
+                break
             time.sleep(1)

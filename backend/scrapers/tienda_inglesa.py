@@ -16,6 +16,7 @@ from models.models import (
     db,
     Brand,
     Category,
+    Offer,
     Product,
     ProductCategory,
     StoreProduct,
@@ -25,10 +26,11 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
-from utils import normalize_brand
+from utils import normalize_brand, jaccard_similarity, same_size
 
 STORE_CHAIN_NAME = "Tienda Inglesa"
 TI_BASE = "https://www.tiendainglesa.com.uy"
+
 
 TI_CATEGORIAS = [
     {"url": "https://www.tiendainglesa.com.uy/supermercado/categoria/almacen/78",    "nombre": "Almacén"},
@@ -39,14 +41,19 @@ TI_CATEGORIAS = [
 ]
 
 
+def _ean13_valido(code):
+    return bool(code and len(str(code)) == 13 and str(code).isdigit())
+
+
 def extraer_datos_producto(page, product_url):
     try:
         page.goto(product_url, wait_until="domcontentloaded", timeout=10000)
         el = page.query_selector("script[type='application/ld+json']")
         if el:
             data = json.loads(el.inner_text())
+            raw_ean = data.get("gtin13")
             return {
-                "ean": data.get("gtin13"),
+                "ean": raw_ean if _ean13_valido(raw_ean) else None,
                 "brand": data.get("brand", {}).get("name"),
                 "sku": data.get("offers", {}).get("sku") or data.get("sku"),
             }
@@ -87,6 +94,17 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
                     precio_text.replace("$", "").replace(".", "").replace(",", ".").strip()
                 )
 
+                precio_lista = None
+                precio_lista_el = c.query_selector("span.wTxtProductPriceBefore")
+                if precio_lista_el:
+                    try:
+                        precio_lista = float(
+                            precio_lista_el.inner_text().strip()
+                            .replace("$", "").replace(".", "").replace(",", ".").strip()
+                        )
+                    except Exception:
+                        precio_lista = None
+
                 imagen_el = c.query_selector("img.card-product-img")
                 imagen = imagen_el.get_attribute("src") if imagen_el else None
 
@@ -115,6 +133,7 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
                     {
                         "nombre_externo": nombre,
                         "precio": precio,
+                        "precio_lista": precio_lista,
                         "imagen": imagen,
                         "cashback": cashback,
                         "disponible": True,
@@ -177,6 +196,23 @@ def guardar_en_db(productos, categoria_nombre=None):
                             product = candidate
                             break
 
+            # Fallback 4: token overlap (Jaccard ≥ 0.5) dentro de misma marca
+            if not product:
+                brand_norm = normalize_brand(p.get("brand") or "")
+                if brand_norm:
+                    candidates = Product.query.join(Brand).filter(
+                        Brand.normalizedName == brand_norm
+                    ).limit(100).all()
+                    best_score, best_candidate = 0.0, None
+                    for candidate in candidates:
+                        if not same_size(p["nombre_externo"], candidate.normalizedName):
+                            continue
+                        score = jaccard_similarity(p["nombre_externo"], candidate.normalizedName)
+                        if score > best_score:
+                            best_score, best_candidate = score, candidate
+                    if best_score >= 0.6:
+                        product = best_candidate
+
             # Si encontró producto CKAN sin EAN, enriquecerlo con el EAN scrapeado
             if product and p.get("ean") and not product.ean:
                 product.ean = p["ean"]
@@ -200,6 +236,7 @@ def guardar_en_db(productos, categoria_nombre=None):
                 )
                 db.session.add(product)
                 db.session.flush()
+
             elif p.get("ean") and not product.ean:
                 product.ean = p["ean"]
 
@@ -239,6 +276,32 @@ def guardar_en_db(productos, categoria_nombre=None):
                             categoryId=categoria.categoryId
                         ))
 
+            # Detectar y registrar oferta cuando hay precio de lista mayor al precio actual
+            precio_lista = p.get("precio_lista")
+            if precio_lista:
+                oferta_existente = Offer.query.filter_by(
+                    storeProductId=store_product.storeProductId,
+                    offerType="DESCUENTO"
+                ).first()
+
+                if p["precio"] < precio_lista:
+                    if oferta_existente:
+                        oferta_existente.offerPrice = precio_lista
+                        oferta_existente.isActive = True
+                        oferta_existente.updatedAt = datetime.now()
+                    else:
+                        db.session.add(Offer(
+                            storeProductId=store_product.storeProductId,
+                            offerType="DESCUENTO",
+                            offerPrice=precio_lista,
+                            currency="UYU",
+                            isActive=True,
+                            updatedAt=datetime.now(),
+                        ))
+                elif oferta_existente and oferta_existente.isActive:
+                    oferta_existente.isActive = False
+                    oferta_existente.updatedAt = datetime.now()
+
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
                 price=p["precio"],
@@ -263,6 +326,11 @@ def obtener_eans_existentes(nombres):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", action="store_true", help="Scrapea solo 1 categoría, 1 página")
+    args = parser.parse_args()
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -280,8 +348,11 @@ if __name__ == "__main__":
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
         page = context.new_page()
+        if args.test:
+            print("[TEST MODE] categoría: Almacén, 1 página")
         try:
-            for cat in TI_CATEGORIAS:
+            cats = [c for c in TI_CATEGORIAS if c["nombre"] == "Almacén"] if args.test else TI_CATEGORIAS
+            for cat in cats:
                 pagina = 0
                 nombres_pagina_anterior = None
                 print(f"\n=== Categoría: {cat['nombre']} ===")
@@ -317,11 +388,13 @@ if __name__ == "__main__":
                                 prod["ean"] = datos["ean"]
                                 prod["brand"] = datos["brand"]
                                 prod["sku"] = datos["sku"]
-                            time.sleep(0.1)
+                            time.sleep(0.05)
 
                     guardar_en_db(productos, cat["nombre"])
                     pagina += 1
-                    time.sleep(0.8)
+                    if args.test:
+                        break
+                    time.sleep(0.3)
         finally:
             context.close()
             browser.close()
