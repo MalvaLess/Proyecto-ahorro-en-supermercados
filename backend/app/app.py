@@ -2,6 +2,7 @@ import sys
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+from flask_cors import CORS
 
 load_dotenv()
 
@@ -29,6 +30,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:5173"])
 
 app.config["DEBUG"] = True
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
