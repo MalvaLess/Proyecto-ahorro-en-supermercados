@@ -9,7 +9,7 @@ function Products() {
         <p>Compara precios entre supermercados</p>
       </div>
 
-      <div className="products-grid">
+      <div className="products-featured-grid">
 
         <div className="product-card">
           <img

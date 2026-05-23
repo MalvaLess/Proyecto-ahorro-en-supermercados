@@ -60,8 +60,6 @@
   line-height: 1.7;
 }
 
-/* línea horizontal */
-
 .how-steps::before {
   content: "";
   position: absolute;

@@ -1,50 +1,50 @@
 import './Features.css'
 
 function Features() {
-  return (
-    <section className="features">
+	return (
+		<section className="features">
 
-      <div className="feature-card">
+			<div className="feature-card">
 
-        <div className="feature-icon">
-          💰
-        </div>
+				<div className="feature-icon">
+					💰
+				</div>
 
-        <h3>Compara precios</h3>
+				<h3>Compara precios</h3>
 
-        <p>
-          Encuentra los productos más económicos entre supermercados.
-        </p>
-      </div>
+				<p>
+					Encuentra los productos más económicos entre supermercados.
+				</p>
+			</div>
 
-      <div className="feature-card">
+			<div className="feature-card">
 
-        <div className="feature-icon">
-          🛒
-        </div>
+				<div className="feature-icon">
+					🛒
+				</div>
 
-        <h3>Encuentra ofertas</h3>
+				<h3>Encuentra ofertas</h3>
 
-        <p>
-          Descubre promociones y descuentos disponibles.
-        </p>
-      </div>
+				<p>
+					Descubre promociones y descuentos disponibles.
+				</p>
+			</div>
 
-      <div className="feature-card">
+			<div className="feature-card">
 
-        <div className="feature-icon">
-          📈
-        </div>
+				<div className="feature-icon">
+					📈
+				</div>
 
-        <h3>Controla gastos</h3>
+				<h3>Controla gastos</h3>
 
-        <p>
-          Administra mejor tu presupuesto mensual.
-        </p>
-      </div>
+				<p>
+					Administra mejor tu presupuesto mensual.
+				</p>
+			</div>
 
-    </section>
-  )
+		</section>
+	)
 }
 
 export default Features

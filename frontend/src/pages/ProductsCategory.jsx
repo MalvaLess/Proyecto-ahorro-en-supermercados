@@ -1,6 +1,7 @@
 import './ProductsCategory.css'
 import { FiSearch } from 'react-icons/fi'
-import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import lecheImg from '../assets/Sabor_Original_Opt_329b4b6db5.png'
 import yogurtGriego from '../assets/627C4B7F7239395D.png!c750x0.jpeg'
@@ -14,6 +15,7 @@ import mandarinas from '../assets/images (1).jpeg'
 function ProductsCategory() {
 
     const { category } = useParams()
+    const [search, setSearch] = useState('')
 
     const productsData = {
 
@@ -103,7 +105,7 @@ function ProductsCategory() {
                 ]
             },
 
-                        {
+            {
                 id: 3,
 
                 slug: 'mandarinas',
@@ -142,10 +144,25 @@ function ProductsCategory() {
     }
 
     const products = productsData[category] || []
+    const filteredProducts = products.filter(product =>
+        product.name
+            .toLowerCase()
+            .includes(search.toLowerCase())
+    )
 
     return (
 
         <section className="products-category-page">
+
+            <div className="back-links">
+
+                <Link to="/products">
+
+                    ← Productos
+
+                </Link>
+
+            </div>
 
             <div className="category-header">
 
@@ -166,6 +183,8 @@ function ProductsCategory() {
                 <input
                     type="text"
                     placeholder={`Buscar en ${category}...`}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                 />
 
                 <button>
@@ -174,10 +193,10 @@ function ProductsCategory() {
 
             </div>
 
-            <div className="products-grid">
+            <div className="products-category-grid">
 
                 {
-                    products.map(product => (
+                    filteredProducts.map(product => (
 
                         <ProductCard
                             key={product.id}

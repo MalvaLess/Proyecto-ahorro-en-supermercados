@@ -175,3 +175,34 @@
 
   transform: translateY(-3px);
 }
+
+.back-links {
+  margin-bottom: 35px;
+
+}
+
+.back-links a {
+  text-decoration: none;
+
+  color: #2e7d32;
+
+  font-size: 18px;
+
+  font-weight: 600;
+
+  transition: 0.3s;
+}
+
+.back-links a:hover {
+  color: #256428;
+}
+
+.market-helper-text {
+  margin-top: 18px;
+
+  font-size: 15px;
+
+  color: #777;
+
+  text-align: center;
+}

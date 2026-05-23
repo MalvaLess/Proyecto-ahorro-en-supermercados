@@ -1,5 +1,5 @@
 import './ProductDetail.css'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
 import lecheImg from '../assets/Sabor_Original_Opt_329b4b6db5.png'
 import yogurtGriego from '../assets/627C4B7F7239395D.png!c750x0.jpeg'
@@ -7,7 +7,6 @@ import quesoParmesano from '../assets/queso-parmesano-latti-100-g-01.png'
 import tomates from '../assets/Fresh-Tomato-PNG-Picture.png'
 import lechuga from '../assets/360_F_563197320_gNMb7ZZookMZmYGt0kANZZDmIChNm014.jpg'
 import mandarinas from '../assets/images (1).jpeg'
-
 
 function ProductDetail({ cart, setCart }) {
 
@@ -17,6 +16,8 @@ function ProductDetail({ cart, setCart }) {
 
         {
             slug: 'leche-alpina',
+
+            category: 'lacteos',
 
             name: 'Leche Alpina',
 
@@ -48,6 +49,8 @@ function ProductDetail({ cart, setCart }) {
         {
             slug: 'yogurt-griego',
 
+            category: 'lacteos',
+
             name: 'Yogurt Griego',
 
             image: yogurtGriego,
@@ -77,6 +80,8 @@ function ProductDetail({ cart, setCart }) {
 
         {
             slug: 'queso-parmesano',
+
+            category: 'lacteos',
 
             name: 'Queso Parmesano',
 
@@ -108,6 +113,8 @@ function ProductDetail({ cart, setCart }) {
         {
             slug: 'tomates',
 
+            category: 'verduras',
+
             name: 'Tomates',
 
             image: tomates,
@@ -138,6 +145,8 @@ function ProductDetail({ cart, setCart }) {
         {
             slug: 'lechuga',
 
+            category: 'verduras',
+
             name: 'Lechuga',
 
             image: lechuga,
@@ -167,6 +176,8 @@ function ProductDetail({ cart, setCart }) {
 
         {
             slug: 'mandarinas',
+
+            category: 'verduras',
 
             name: 'Mandarinas',
 
@@ -202,12 +213,13 @@ function ProductDetail({ cart, setCart }) {
     )
 
     const [selectedMarket, setSelectedMarket] = useState(null)
-
     const addToCart = () => {
 
         if (!selectedMarket) return
 
         const productToAdd = {
+
+            slug: product.slug,
 
             name: product.name,
 
@@ -219,14 +231,42 @@ function ProductDetail({ cart, setCart }) {
 
         }
 
-        setCart([...cart, productToAdd])
+        const existingProduct = cart.find(
+            item => item.slug === product.slug
+        )
 
-        console.log(productToAdd)
+        if (existingProduct) {
+
+            const updatedCart = cart.map(item =>
+
+                item.slug === product.slug
+                    ? productToAdd
+                    : item
+
+            )
+
+            setCart(updatedCart)
+
+        } else {
+
+            setCart([...cart, productToAdd])
+
+        }
     }
 
     return (
 
         <section className="product-detail-page">
+
+            <div className="back-links">
+
+                <Link to={`/products/${product.category}`}>
+
+                    ← Volver a {product.category}
+
+                </Link>
+
+            </div>
 
             <div className="product-detail-container">
 
@@ -251,8 +291,13 @@ function ProductDetail({ cart, setCart }) {
 
                 <div className="product-info">
 
-
                     <div className="markets-list">
+
+                        <p className="market-helper-text">
+
+                            Compara precios y elige la mejor opción para ti.
+
+                        </p>
 
                         {
                             product.prices.map((item, index) => (

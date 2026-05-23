@@ -1,4 +1,5 @@
 import './Cart.css'
+import { Link } from 'react-router-dom'
 
 function Cart({ cart, setCart }) {
 
@@ -25,56 +26,72 @@ function Cart({ cart, setCart }) {
 
         <section className="cart-page">
 
-            <div className="cart-header">
-
-                <h1>Mi lista</h1>
-
-                <p>
-                    Productos seleccionados para comparar presupuesto.
-                </p>
-
-            </div>
+            <h1 className="cart-title">
+                Mi lista de productos
+            </h1>
 
             {
                 cart.length === 0 ? (
 
                     <div className="empty-cart">
 
-                        <h2>No hay productos en la lista</h2>
+                        <h2>
+                            Tu lista está vacía
+                        </h2>
+
+                        <p>
+                            Agrega <strong>
+                                <Link
+                                    to= '/products'
+                                    className='link-to-product'
+                                >
+                                    productos
+                                </Link>
+
+                            </strong> para comenzar a comparar precios.
+                        </p>
 
                     </div>
 
                 ) : (
 
-                    <>
+                    <div className="cart-layout">
 
                         <div className="cart-products">
 
                             {
                                 cart.map((item, index) => (
 
-                                    <div className="cart-card" key={index}>
+                                    <div className="cart-item" key={index}>
 
-                                        <img
-                                            src={item.image}
-                                            alt={item.name}
-                                        />
+                                        <div className="cart-item-left">
 
-                                        <div className="cart-info">
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                            />
 
-                                            <h3>{item.name}</h3>
+                                            <div>
 
-                                            <p>{item.market}</p>
+                                                <h3>{item.name}</h3>
+
+                                                <p>{item.market}</p>
+
+                                            </div>
 
                                         </div>
 
-                                        <strong>{item.price}</strong>
+                                        <div className="cart-item-right">
 
-                                        <button
-                                            onClick={() => removeProduct(index)}
-                                        >
-                                            Eliminar
-                                        </button>
+                                            <strong>{item.price}</strong>
+
+                                            <button
+                                                onClick={() => removeProduct(index)}
+                                            >
+                                                Eliminar
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
@@ -83,24 +100,43 @@ function Cart({ cart, setCart }) {
 
                         </div>
 
-                        <div className="cart-total">
+                        <div className="budget-summary">
 
                             <h2>
-                                Total estimado:
+                                Resumen de presupuesto
                             </h2>
 
-                            <strong>
-                                ${total.toLocaleString()}
-                            </strong>
+                            <div className="summary-row">
+
+                                <span>Productos</span>
+
+                                <strong>{cart.length}</strong>
+
+                            </div>
+
+                            <div className="summary-row">
+
+                                <span>Total estimado</span>
+
+                                <strong>${total.toLocaleString()}</strong>
+
+                            </div>
+
+                            <button className="save-budget-btn">
+
+                                Guardar lista
+
+                            </button>
 
                         </div>
 
-                    </>
+                    </div>
 
                 )
             }
 
         </section>
+
     )
 }
 

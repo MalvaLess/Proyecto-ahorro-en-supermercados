@@ -39,23 +39,15 @@
 
 .cart-icon {
   position: relative;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   text-decoration: none;
 }
 
-/* ICONO */
-
 .cart-icon svg {
   font-size: 25px;
-
   color: #1f1f1f;
-
   transition: 0.3s;
 }
 
@@ -63,32 +55,18 @@
   color: #2e7d32;
 }
 
-/* CONTADOR */
-
 .cart-count {
   position: absolute;
-
   top: -8px;
-
   right: -10px;
-
   width: 22px;
-
   height: 22px;
-
   border-radius: 50%;
-
   background-color: #2e7d32;
-
   color: white;
-
   font-size: 12px;
-
   font-weight: 700;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 }

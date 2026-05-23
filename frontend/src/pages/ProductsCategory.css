@@ -40,10 +40,34 @@
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
 
-.products-grid {
+.products-category-grid {
+
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+
+  grid-template-columns: repeat(3, 280px);
+
+  justify-content: center;
+
   gap: 35px;
 }
 
+.back-links {
+  margin-bottom: 30px;
+}
+
+.back-links a {
+  text-decoration: none;
+
+  color: #2e7d32;
+
+  font-size: 18px;
+
+  font-weight: 600;
+
+  transition: 0.3s;
+}
+
+.back-links a:hover {
+  color: #256428;
+}
 
