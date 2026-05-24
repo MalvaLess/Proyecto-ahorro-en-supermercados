@@ -13,6 +13,8 @@ export async function loginUser(credentials) {
     localStorage.setItem("expiresIn", expiresIn);
     localStorage.setItem("user", JSON.stringify(user));
 
+    window.dispatchEvent(new Event("auth-change"));
+
     return response.data;
 }
 
@@ -30,6 +32,8 @@ export function logoutUser() {
   localStorage.removeItem("token_type");
   localStorage.removeItem("expires_in");
   localStorage.removeItem("user");
+
+  window.dispatchEvent(new Event("auth-change"));
 }
 
 export function getCurrentUser() {

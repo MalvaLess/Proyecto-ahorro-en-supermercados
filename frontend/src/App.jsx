@@ -10,6 +10,8 @@ import ProductsCategory from './pages/ProductsCategory'
 import Register from './pages/Register'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
+import ProtectedRoute from './components/ProtectedRoute'
+import Account from './pages/Account'
 
 
 
@@ -43,6 +45,12 @@ function App() {
 
         <Route path="/cart" element={<Cart cart={cart} setCart={setCart} />} />
 
+        <Route 
+          path='/account' 
+          element={<ProtectedRoute>
+            <Account />
+          </ProtectedRoute>}
+        />
 
       </Routes>
 
