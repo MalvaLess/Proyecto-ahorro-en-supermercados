@@ -30,7 +30,19 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from models.models import db
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173"])
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+            ],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    }
+)
 
 app.config["DEBUG"] = True
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
@@ -44,7 +56,7 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 
 app.register_blueprint(health_bp, url_prefix="/api/check")
-app.register_blueprint(user_bp, url_prefix="/api/users")
+app.register_blueprint(user_bp, url_prefix="/api")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(brand_bp, url_prefix="/api/brands")
 app.register_blueprint(category_bp, url_prefix="/api/categories")

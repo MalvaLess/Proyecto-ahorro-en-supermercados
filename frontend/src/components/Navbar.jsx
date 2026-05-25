@@ -1,8 +1,26 @@
 import './Navbar.css'
 import { Link } from 'react-router-dom'
 import { FaShoppingCart } from 'react-icons/fa'
+import { useEffect, useState } from 'react'
+import { isAuthenticated } from '../services/authService';
 
 function Navbar({ cart = [] }) {
+
+  const [ loggedIn, setLoggedIn ] = useState(isAuthenticated());
+
+  function refreshAuthState() {
+    setLoggedIn(isAuthenticated());
+  }
+
+  useEffect(() => {
+    refreshAuthState();
+
+    window.addEventListener('auth-change', refreshAuthState);
+
+    return() => {
+      window.removeEventListener("auth-change", refreshAuthState)
+    }
+  }, []);
 
   return (
 
@@ -22,7 +40,13 @@ function Navbar({ cart = [] }) {
 
         <Link to="/about">Nosotros</Link>
 
-        <Link to="/login">Login</Link>
+        {
+          loggedIn ? (
+            <Link to="/account">Mi Cuenta</Link>
+          ) : (
+            <Link to="/login">Login</Link>
+          )
+        }
 
         <Link to="/cart" className="cart-icon">
 

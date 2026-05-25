@@ -19,7 +19,7 @@ export async function loginUser(credentials) {
 }
 
 export async function registerUser(userData) {
-    const response = await apiRequest("/users/", {
+    const response = await apiRequest("/users", {
         method: "POST",
         body: JSON.stringify(userData)
     })
@@ -43,7 +43,7 @@ export function getCurrentUser() {
         return null;
     }
 
-    return JSON.stringify(user);
+    return JSON.parse(user);
 }
 
 export function isAuthenticated() {

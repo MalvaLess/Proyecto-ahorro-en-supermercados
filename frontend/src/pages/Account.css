@@ -1,117 +1,229 @@
 .account-page {
-  display: grid;
-  grid-template-columns: 260px 1fr;
   min-height: 100vh;
-  background-color: #f6f7f9;
+
+  display: grid;
+
+  grid-template-columns: 280px 1fr;
+
+  background-color: #f7f7f7;
+
+  padding: 140px;
+
+  gap: 30px;
 }
 
 .account-sidebar {
-  background-color: #ffffff;
-  border-right: 1px solid #e5e7eb;
-  padding: 32px 20px;
+  background-color: white;
+
+  padding: 35px 28px;
+
+  border-radius: 32px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+
+  height: fit-content;
 }
 
 .account-sidebar h1 {
-  font-size: 24px;
-  margin-bottom: 24px;
+  font-size: 32px;
+
+  margin-bottom: 30px;
+
+  color: #1f1f1f;
 }
 
 .account-sidebar button {
   width: 100%;
-  display: block;
-  padding: 12px 14px;
-  margin-bottom: 10px;
+
+  padding: 16px 18px;
+
+  margin-bottom: 14px;
+
   border: none;
-  border-radius: 10px;
-  background-color: transparent;
+
+  border-radius: 16px;
+
+  background-color: #f7f7f7;
+
+  color: #1f1f1f;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
   text-align: left;
+
   cursor: pointer;
-  font-size: 15px;
+
+  transition: 0.3s;
 }
 
-.account-sidebar button:hover,
+.account-sidebar button:hover {
+  background-color: rgba(46,125,50,0.12);
+
+  color: #2e7d32;
+}
+
 .account-sidebar button.active {
-  background-color: #eef2ff;
-  font-weight: 600;
+  background-color: #2e7d32;
+
+  color: white;
 }
 
 .account-content {
-  padding: 40px;
+  width: 100%;
 }
 
 .account-content-card {
-  background-color: #ffffff;
-  padding: 32px;
-  border-radius: 16px;
-  max-width: 720px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  width: 100%;
+
+  max-width: 760px;
+
+  background-color: white;
+
+  padding: 50px;
+
+  border-radius: 32px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
 }
 
 .account-content-card h2 {
-  margin-bottom: 8px;
+  font-size: 38px;
+
+  margin-bottom: 15px;
+
+  color: #1f1f1f;
 }
 
 .account-content-card p {
-  margin-bottom: 24px;
-  color: #64748b;
+  color: #666;
+
+  margin-bottom: 40px;
 }
 
 .account-form {
-  display: grid;
-  gap: 18px;
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 25px;
 }
 
 .input-group {
-  display: grid;
-  gap: 8px;
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
 }
 
 .input-group label {
   font-weight: 600;
+
+  color: #1f1f1f;
 }
 
 .input-group input {
-  padding: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  padding: 18px 20px;
+
+  border-radius: 16px;
+
+  border: 1px solid #ddd;
+
+  outline: none;
+
+  font-size: 16px;
+
+  transition: 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #2e7d32;
+
+  box-shadow: 0 0 0 4px rgba(46,125,50,0.12);
 }
 
 .account-form button {
-  margin-top: 8px;
-  padding: 12px 16px;
+  height: 60px;
+
   border: none;
-  border-radius: 10px;
-  background-color: #111827;
+
+  border-radius: 18px;
+
+  background-color: #2e7d32;
+
   color: white;
+
+  font-size: 18px;
+
+  font-weight: 600;
+
   cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.account-form button:hover {
+  background-color: #256428;
 }
 
 .account-form button:disabled {
   opacity: 0.7;
+
   cursor: not-allowed;
 }
 
 .account-success {
-  color: #15803d;
+  color: #2e7d32;
+
   font-weight: 600;
+
+  margin-bottom: 20px;
 }
 
 .account-error {
-  color: #dc2626;
+  color: #d32f2f;
+
   font-weight: 600;
+
+  margin-bottom: 20px;
 }
 
-@media (max-width: 768px) {
+.logout-account-button {
+  margin-top: 30px;
+
+  background-color: #fff0f0 !important;
+
+  color: #d32f2f !important;
+}
+
+.logout-account-button:hover {
+  background-color: #ffdede !important;
+
+  color: #b71c1c !important;
+}
+
+@media (max-width: 900px) {
   .account-page {
     grid-template-columns: 1fr;
+
+    padding: 120px 20px;
   }
 
   .account-sidebar {
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+
+    flex-direction: column;
   }
 
-  .account-content {
-    padding: 24px;
+  .account-content-card {
+    max-width: 100%;
+
+    padding: 40px 28px;
+  }
+
+  .account-content-card h2 {
+    font-size: 32px;
   }
 }

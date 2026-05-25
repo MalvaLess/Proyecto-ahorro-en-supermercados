@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from services.user_service import patch_user
 
 from services.user_service import (
     get_users,
@@ -10,7 +12,7 @@ from services.user_service import (
 
 user_bp = Blueprint("users", __name__)
 
-@user_bp.route("/", methods=["GET"])
+@user_bp.route("/users", methods=["GET"])
 def list_users():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("perPage", 10, type=int)
@@ -31,7 +33,7 @@ def list_users():
         }
     }), 200
 
-@user_bp.route("/<int:user_id>", methods=["GET"])
+@user_bp.route("/users/<int:user_id>", methods=["GET"])
 def find_user(user_id):
     user = get_user_by_id(user_id)
 
@@ -48,7 +50,7 @@ def find_user(user_id):
 
     
 
-@user_bp.route("/", methods=(["POST"]))
+@user_bp.route("/users", methods=(["POST"]))
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -66,7 +68,7 @@ def create():
         "data": user.to_dict()
     }), status_code
 
-@user_bp.route("/<int:user_id>", methods=["PUT"])
+@user_bp.route("/users/<int:user_id>", methods=["PUT"])
 def update(user_id):
     data = request.get_json(silent=True) or {}
 
@@ -84,8 +86,31 @@ def update(user_id):
         "data": user.to_dict()
     }), status_code
 
+@user_bp.route("/users/<int:user_id>", methods=["PATCH"])
+@jwt_required()
+def patch(user_id):
+    authenticated_user_id = int(get_jwt_identity())
+    data = request.get_json(silent=True) or {}
 
-@user_bp.route("/<int:user_id>", methods=["DELETE"])
+    user, error, status_code = patch_user(
+        user_id=user_id,
+        authenticated_user_id=authenticated_user_id,
+        data=data
+    )
+
+    if error:
+        return jsonify({
+            "success": False,
+            **error
+        }), status_code
+
+    return jsonify({
+        "success": True,
+        "message": "Usuario actualizado correctamente",
+        "data": user.to_dict()
+    }), status_code
+
+@user_bp.route("/users/<int:user_id>", methods=["DELETE"])
 def delete(user_id):
     user, error, status_code = deactivate_user(user_id)
 

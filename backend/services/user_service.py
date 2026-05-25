@@ -123,7 +123,92 @@ def update_user(user_id, data):
                 "message": "Error al actualizar el usuario",
                 "error": str(error)
             }, 500
-        
+
+def patch_user(user_id, authenticated_user_id, data):
+    if user_id != authenticated_user_id:
+        return None, {
+            "message": "No tienes autorización para modificar este usuario"
+        }, 403
+
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return None, {
+            "message": "Usuario no encontrado"
+        }, 404
+
+    try:
+        if "firstName" in data:
+            if data["firstName"] is None or str(data["firstName"]).strip() == "":
+                return None, {"message": "El nombre no puede estar vacío"}, 400
+
+            user.firstName = data["firstName"].strip()
+
+        if "lastName" in data:
+            if data["lastName"] is None or str(data["lastName"]).strip() == "":
+                return None, {"message": "El apellido no puede estar vacío"}, 400
+
+            user.lastName = data["lastName"].strip()
+
+        if "email" in data:
+            if data["email"] is None or str(data["email"]).strip() == "":
+                return None, {"message": "El email no puede estar vacío"}, 400
+
+            new_email = data["email"].strip().lower()
+
+            existing_user = User.query.filter(
+                User.email == new_email,
+                User.userId != user.userId
+            ).first()
+
+            if existing_user:
+                return None, {
+                    "message": "Ya existe otro usuario con ese email"
+                }, 409
+
+            user.email = new_email
+
+        if "newPassword" in data:
+            current_password = data.get("currentPassword")
+            new_password = data.get("newPassword")
+
+            if not current_password:
+                return None, {
+                    "message": "Debes ingresar tu contraseña actual"
+                }, 400
+
+            if not user.check_password(current_password):
+                return None, {
+                    "message": "La contraseña actual no es correcta"
+                }, 401
+
+            if new_password is None or len(str(new_password).strip()) < 6:
+                return None, {
+                    "message": "La nueva contraseña debe tener al menos 6 caracteres"
+                }, 400
+
+            user.set_password(new_password)
+
+        db.session.commit()
+
+        return user, None, 200
+
+    except IntegrityError as error:
+        db.session.rollback()
+
+        return None, {
+            "message": "No se pudo actualizar el usuario por una restricción de integridad",
+            "details": str(error.orig)
+        }, 409
+
+    except SQLAlchemyError as error:
+        db.session.rollback()
+
+        return None, {
+            "message": "Error al actualizar usuario",
+            "error": str(error)
+        }, 500
+
 def deactivate_user(user_id):
     user = get_user_by_id(user_id)
 
