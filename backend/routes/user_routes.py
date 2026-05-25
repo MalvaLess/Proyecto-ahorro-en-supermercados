@@ -34,6 +34,7 @@ def list_users():
     }), 200
 
 @user_bp.route("/users/<int:user_id>", methods=["GET"])
+@jwt_required()
 def find_user(user_id):
     user = get_user_by_id(user_id)
 
@@ -69,6 +70,7 @@ def create():
     }), status_code
 
 @user_bp.route("/users/<int:user_id>", methods=["PUT"])
+@jwt_required()
 def update(user_id):
     data = request.get_json(silent=True) or {}
 
@@ -111,6 +113,7 @@ def patch(user_id):
     }), status_code
 
 @user_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@jwt_required()
 def delete(user_id):
     user, error, status_code = deactivate_user(user_id)
 
