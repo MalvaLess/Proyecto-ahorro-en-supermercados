@@ -11,6 +11,7 @@ flask-migrate = "*"
 python-dotenv = "*"
 flask-jwt-extended = "*"
 playwright = "*"
+requests = "*"
 
 
 [dev-packages]

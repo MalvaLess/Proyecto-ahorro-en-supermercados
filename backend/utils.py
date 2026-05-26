@@ -13,6 +13,19 @@ def normalize_brand(name):
     return name
 
 
+def _ean13_checksum_ok(s):
+    total = sum((3 if i % 2 else 1) * int(d) for i, d in enumerate(s[:12]))
+    return (10 - total % 10) % 10 == int(s[12])
+
+
+def ean13_valido(code):
+    """Valida EAN-13: 13 dígitos, no empieza en 2, checksum correcto."""
+    s = str(code).strip() if code else ""
+    if len(s) != 13 or not s.isdigit() or s.startswith("2"):
+        return False
+    return _ean13_checksum_ok(s)
+
+
 def _tokens(text):
     words = re.sub(r"[^\w\s]", "", text.lower()).split()
     return {w for w in words if len(w) > 2 and w not in STOPWORDS}
