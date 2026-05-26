@@ -1,24 +1,26 @@
 from models.models import db, Product, StoreProduct, PriceSnapshot, Offer
-from models.models import db, Product, StoreProduct, PriceSnapshot, Store
 
 
-def parse_chain_ids(chain_ids_raw):
-    if chain_ids_raw is None or chain_ids_raw.strip() == "":
+def parse_store_ids(store_ids_raw):
+    if store_ids_raw is None or store_ids_raw.strip() == "":
         return None, None
 
     try:
-        chain_ids = []
+        store_ids = []
 
-        for part in chain_ids_raw.split(","):
-            clean = part.strip()
-            if clean:
-                chain_ids.append(int(clean))
+        stores_raw_list = store_ids_raw.split(",")
 
-        return chain_ids, None
+        for store_id in stores_raw_list:
+            clean_store_id = store_id.strip()
+
+            if clean_store_id != "":
+                store_ids.append(int(clean_store_id))
+
+        return store_ids, None
 
     except ValueError:
         return None, {
-            "message": "storeChainIds debe ser una lista de números separados por coma. Ejemplo: storeChainIds=1,2,3"
+            "message": "storeIds debe ser una lista de números separados por coma. Ejemplo: storeIds=1,2,3"
         }
 
 
@@ -38,7 +40,7 @@ def get_active_offer(store_product_id):
         Offer.offerId.desc()
     ).first()
 
-def compare_product_prices(product_id, chain_ids=None):
+def compare_product_prices(product_id, store_ids=None):
     product = db.session.get(Product, product_id)
 
     if product is None:
@@ -51,29 +53,15 @@ def compare_product_prices(product_id, chain_ids=None):
         StoreProduct.isAvailable == True
     )
 
-    if chain_ids:
-        store_ids_for_chains = [
-            s.storeId for s in Store.query.filter(Store.storeChainId.in_(chain_ids)).all()
-        ]
-        query = query.filter(StoreProduct.storeId.in_(store_ids_for_chains))
+    if store_ids:
+        query = query.filter(StoreProduct.storeId.in_(store_ids))
 
     store_products = query.all()
 
-    # Agrupar por cadena: preferir precio SCRAPER, sino mínimo CKAN
-    cadenas = {}
+    items = []
 
     for store_product in store_products:
         latest_price = get_latest_price(store_product.storeProductId)
-        if not latest_price:
-            continue
-
-        chain = store_product.store.chain if store_product.store else None
-        chain_id = chain.storeChainId if chain else None
-        chain_name = chain.name if chain else None
-        price_val = float(latest_price.price)
-        source = latest_price.source
-
-        candidate = {
         active_offer = get_active_offer(store_product.storeProductId)
 
         normal_price = latest_price.price if latest_price else None
@@ -84,7 +72,7 @@ def compare_product_prices(product_id, chain_ids=None):
         items.append({
             "storeProductId": store_product.storeProductId,
             "storeId": store_product.storeId,
-            "storeName": chain_name,
+            "storeName": store_product.store.chain.name if store_product.store and store_product.store.chain else None,
             "storeAddress": store_product.store.address if store_product.store else None,
             "externalSku": store_product.externalSku,
             "externalName": store_product.externalName,
@@ -102,27 +90,6 @@ def compare_product_prices(product_id, chain_ids=None):
             "currency": latest_price.currency if latest_price else None,
             "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
         })
-            "price": price_val,
-            "currency": latest_price.currency,
-            "capturedAt": latest_price.capturedAt.isoformat() if latest_price.capturedAt else None,
-            "source": source,
-        }
-
-        existing = cadenas.get(chain_id)
-        if not existing:
-            cadenas[chain_id] = candidate
-        else:
-            # SCRAPER gana sobre CKAN; entre mismo source, precio más bajo
-            existing_scraper = existing["source"] == "SCRAPER"
-            new_scraper = source == "SCRAPER"
-            if new_scraper and not existing_scraper:
-                cadenas[chain_id] = candidate
-            elif not new_scraper and existing_scraper:
-                pass
-            elif price_val < existing["price"]:
-                cadenas[chain_id] = candidate
-
-    items = list(cadenas.values())
 
     items.sort(
         key=lambda item: (
