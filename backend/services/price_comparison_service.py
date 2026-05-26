@@ -24,6 +24,25 @@ def parse_store_ids(store_ids_raw):
         }
 
 
+def parse_chain_ids(chain_ids_raw):
+    if chain_ids_raw is None or chain_ids_raw.strip() == "":
+        return None, None
+
+    try:
+        chain_ids = []
+
+        for part in chain_ids_raw.split(","):
+            clean = part.strip()
+            if clean:
+                chain_ids.append(int(clean))
+
+        return chain_ids, None
+
+    except ValueError:
+        return None, {
+            "message": "storeChainIds debe ser una lista de números separados por coma. Ejemplo: storeChainIds=1,2,3"
+        }
+
 def get_latest_price(store_product_id):
     return PriceSnapshot.query.filter_by(
         storeProductId=store_product_id
