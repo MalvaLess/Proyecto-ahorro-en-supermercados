@@ -441,8 +441,6 @@ class Offer(db.Model):
             "offerType": self.offerType,
             "offerPrice": float(self.offerPrice) if self.offerPrice is not None else None,
             "currency": self.currency,
-            "firstSeenAt": self.firstSeenAt.isoformat() if hasattr(self, "firstSeenAt") and self.firstSeenAt else None,
-            "lastSeenAt": self.lastSeenAt.isoformat() if hasattr(self, "lastSeenAt") and self.lastSeenAt else None,
             "isActive": self.isActive,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
             "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None

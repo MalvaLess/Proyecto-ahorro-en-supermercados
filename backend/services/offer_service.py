@@ -53,9 +53,9 @@ def create_offer(data):
     missing_fields = []
 
     for field in required_fields:
-        if data.get(field) is None or str(data.get(field)).strip() == "": 
+        if data.get(field) is None or str(data.get(field)).strip() == "":
             missing_fields.append(field)
-    
+
     if missing_fields:
         return None, {
             "message": "Faltan campos obligatorios",
@@ -83,7 +83,7 @@ def create_offer(data):
             storeProductId=data["storeProductId"],
             offerType=offer_type,
             offerPrice=parse_decimal(data.get("offerPrice"), "offerPrice"),
-            currency=data.get("currency", "CLP"),
+            currency=data.get("currency", "UYU"),
             isActive=data.get("isActive", True)
         )
 
@@ -192,3 +192,57 @@ def deactivate_offer(offer_id):
             "message": "Error al desactivar oferta",
             "error": str(error)
         }, 500
+=========
+            offerType=data["offerType"],
+            offerPrice=data.get("offerPrice"),
+            currency=data.get("currency", "UYU"),
+            isActive=data.get("isActive", True),
+            updatedAt=datetime.now(),
+        )
+        db.session.add(offer)
+        db.session.commit()
+        return offer, None, 201
+
+    except (IntegrityError, SQLAlchemyError) as e:
+        db.session.rollback()
+        return None, {"message": "Error al crear oferta", "error": str(e)}, 500
+
+
+def update_offer(store_product_id, data):
+    offer = Offer.query.filter_by(storeProductId=store_product_id).first()
+    if offer is None:
+        return None, {"message": "Oferta no encontrada para ese store product"}, 404
+
+    try:
+        if "offerType" in data:
+            offer.offerType = data["offerType"]
+        if "offerPrice" in data:
+            offer.offerPrice = data["offerPrice"]
+        if "currency" in data:
+            offer.currency = data["currency"]
+        if "isActive" in data:
+            offer.isActive = data["isActive"]
+        offer.updatedAt = datetime.now()
+        db.session.commit()
+        return offer, None, 200
+
+    except (IntegrityError, SQLAlchemyError) as e:
+        db.session.rollback()
+        return None, {"message": "Error al actualizar oferta", "error": str(e)}, 500
+
+
+def delete_offer(store_product_id):
+    offer = Offer.query.filter_by(storeProductId=store_product_id).first()
+    if offer is None:
+        return None, {"message": "Oferta no encontrada para ese store product"}, 404
+
+    try:
+        offer.isActive = False
+        offer.updatedAt = datetime.now()
+        db.session.commit()
+        return offer, None, 200
+
+    except (IntegrityError, SQLAlchemyError) as e:
+        db.session.rollback()
+        return None, {"message": "Error al desactivar oferta", "error": str(e)}, 500
+>>>>>>>>> Temporary merge branch 2

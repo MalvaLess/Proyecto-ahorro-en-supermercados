@@ -26,7 +26,7 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
-from utils import normalize_brand, jaccard_similarity, same_size
+from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
 
 STORE_CHAIN_NAME = "Tienda Inglesa"
 TI_BASE = "https://www.tiendainglesa.com.uy"
@@ -41,22 +41,65 @@ TI_CATEGORIAS = [
 ]
 
 
-def _ean13_valido(code):
-    return bool(code and len(str(code)) == 13 and str(code).isdigit())
+def _extraer_ean_cascada(page):
+    """Cascada de 4 niveles para extraer EAN-13 válido desde página de producto TI."""
+    # Nivel 1: JSON-LD gtin13 o gtin
+    try:
+        for el in page.query_selector_all("script[type='application/ld+json']"):
+            data = json.loads(el.inner_text())
+            raw = data.get("gtin13") or data.get("gtin")
+            if ean13_valido(raw):
+                return raw
+    except Exception:
+        pass
+
+    # Nivel 2: meta tag retailer_item_id
+    try:
+        el = page.query_selector("meta[property='product:retailer_item_id']")
+        if el:
+            raw = el.get_attribute("content")
+            if ean13_valido(raw):
+                return raw
+    except Exception:
+        pass
+
+    # Nivel 3: tabla de ficha técnica "Código de Barras"
+    try:
+        for row in page.query_selector_all("tr"):
+            text = row.inner_text()
+            if "barras" in text.lower() or "ean" in text.lower():
+                match = re.search(r'\b(\d{13})\b', text)
+                if match and ean13_valido(match.group(1)):
+                    return match.group(1)
+    except Exception:
+        pass
+
+    # Nivel 4: regex en scripts GTM — solo 773xxxxxxxxxx con checksum
+    try:
+        for sc in page.query_selector_all("script:not([src])"):
+            for match in re.finditer(r'\b(773\d{10})\b', sc.inner_text()):
+                if ean13_valido(match.group(1)):
+                    return match.group(1)
+    except Exception:
+        pass
+
+    return None
 
 
 def extraer_datos_producto(page, product_url):
     try:
         page.goto(product_url, wait_until="domcontentloaded", timeout=10000)
-        el = page.query_selector("script[type='application/ld+json']")
-        if el:
-            data = json.loads(el.inner_text())
-            raw_ean = data.get("gtin13")
-            return {
-                "ean": raw_ean if _ean13_valido(raw_ean) else None,
-                "brand": data.get("brand", {}).get("name"),
-                "sku": data.get("offers", {}).get("sku") or data.get("sku"),
-            }
+        ean = _extraer_ean_cascada(page)
+        brand, sku = None, None
+        try:
+            el = page.query_selector("script[type='application/ld+json']")
+            if el:
+                data = json.loads(el.inner_text())
+                brand = data.get("brand", {}).get("name")
+                sku = data.get("offers", {}).get("sku") or data.get("sku")
+        except Exception:
+            pass
+        return {"ean": ean, "brand": brand, "sku": sku}
     except Exception:
         pass
     return {"ean": None, "brand": None, "sku": None}
@@ -173,6 +216,11 @@ def guardar_en_db(productos, categoria_nombre=None):
 
             if p.get("ean"):
                 product = Product.query.filter_by(ean=p["ean"]).first()
+                if product:
+                    sim = jaccard_similarity(p["nombre_externo"], product.normalizedName)
+                    if sim < 0.3:
+                        print(f"  [EAN-ZOMBIE] EAN {p['ean']} descartado: '{p['nombre_externo']}' vs '{product.name}'")
+                        product = None
 
             if not product:
                 product = Product.query.filter_by(
@@ -327,8 +375,10 @@ def obtener_eans_existentes(nombres):
 
 if __name__ == "__main__":
     import argparse
+    _nombres_cats = [c["nombre"] for c in TI_CATEGORIAS]
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", action="store_true", help="Scrapea solo 1 categoría, 1 página")
+    parser.add_argument("--categoria", choices=_nombres_cats, help="Scrapea solo esta categoría")
     args = parser.parse_args()
 
     with sync_playwright() as p:
@@ -350,8 +400,15 @@ if __name__ == "__main__":
         page = context.new_page()
         if args.test:
             print("[TEST MODE] categoría: Almacén, 1 página")
+        elif args.categoria:
+            print(f"[CATEGORIA] solo: {args.categoria}")
         try:
-            cats = [c for c in TI_CATEGORIAS if c["nombre"] == "Almacén"] if args.test else TI_CATEGORIAS
+            if args.test:
+                cats = [c for c in TI_CATEGORIAS if c["nombre"] == "Almacén"]
+            elif args.categoria:
+                cats = [c for c in TI_CATEGORIAS if c["nombre"] == args.categoria]
+            else:
+                cats = TI_CATEGORIAS
             for cat in cats:
                 pagina = 0
                 nombres_pagina_anterior = None
@@ -380,14 +437,17 @@ if __name__ == "__main__":
                     total = len(productos)
                     for i, prod in enumerate(productos, 1):
                         if prod.get("ean"):
-                            print(f"  EAN {i}/{total}: {prod['nombre_externo'][:45]} (DB)")
+                            print(f"  ✓ {i}/{total}: {prod['nombre_externo'][:45]} (DB)")
                         else:
-                            print(f"  EAN {i}/{total}: {prod['nombre_externo'][:50]}")
                             if prod.get("product_url"):
                                 datos = extraer_datos_producto(page, prod["product_url"])
                                 prod["ean"] = datos["ean"]
                                 prod["brand"] = datos["brand"]
                                 prod["sku"] = datos["sku"]
+                            if prod.get("ean"):
+                                print(f"  ✓ {i}/{total}: {prod['nombre_externo'][:50]} → {prod['ean']}")
+                            else:
+                                print(f"  ✗ {i}/{total}: {prod['nombre_externo'][:55]}")
                             time.sleep(0.05)
 
                     guardar_en_db(productos, cat["nombre"])
@@ -398,3 +458,15 @@ if __name__ == "__main__":
         finally:
             context.close()
             browser.close()
+
+    with app.app_context():
+        sin_ean = (
+            db.session.query(Product)
+            .join(StoreProduct, StoreProduct.productId == Product.productId)
+            .join(Store, Store.storeId == StoreProduct.storeId)
+            .join(StoreChain, StoreChain.storeChainId == Store.storeChainId)
+            .filter(StoreChain.name == STORE_CHAIN_NAME, Product.ean == None)
+            .count()
+        )
+        print(f"\n=== Resumen final ===")
+        print(f"Productos Tienda Inglesa sin EAN en DB: {sin_ean}")

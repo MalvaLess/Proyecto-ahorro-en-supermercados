@@ -1,8 +1,12 @@
 import requests
 import time
+import random
 import sys
 import os
 import re
+import json
+
+from playwright.sync_api import sync_playwright
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -25,7 +29,7 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
-from utils import normalize_brand, jaccard_similarity, same_size
+from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
 
 ENDPOINT = "https://www.tata.com.uy/api/graphql"
 STORE_CHAIN_NAME = "Ta-Ta"
@@ -75,6 +79,7 @@ query ProductsQuery(
                     sku
                     name
                     gtin
+                    slug
                     brand { name }
                     image { url }
                     categoriesIds
@@ -92,8 +97,103 @@ query ProductsQuery(
 }
 """
 
-def _ean13_valido(code):
-    return bool(code and len(str(code)) == 13 and str(code).isdigit())
+
+
+def _extraer_ean_tata(page):
+    """Cascada de extracción EAN-13 desde página Tata hidratada por JS."""
+    # Nivel 1: window.pageData (Gatsby SSR, disponible tras domcontentloaded)
+    try:
+        raw = page.evaluate(
+            "() => { try { return window.pageData.result.serverData.product.ean; } catch(e) { return null; } }"
+        )
+        if ean13_valido(raw):
+            return raw
+    except Exception:
+        pass
+
+    # Nivel 2: JSON-LD gtin13 / gtin
+    try:
+        for el in page.query_selector_all("script[type='application/ld+json']"):
+            data = json.loads(el.inner_text())
+            raw = data.get("gtin13") or data.get("gtin")
+            if ean13_valido(raw):
+                return raw
+    except Exception:
+        pass
+
+    # Nivel 3: regex en scripts — EANs uruguayos comienzan con 773
+    try:
+        for sc in page.query_selector_all("script:not([src])"):
+            for match in re.finditer(r'\b(773\d{10})\b', sc.inner_text()):
+                if ean13_valido(match.group(1)):
+                    return match.group(1)
+    except Exception:
+        pass
+
+    return None
+
+
+def fetch_ean_playwright(page, slug):
+    """Visita página de producto Tata con Playwright y extrae EAN-13 real."""
+    if not slug:
+        return None
+    try:
+        url = f"https://www.tata.com.uy/{slug}/p"
+        page.goto(url, wait_until="domcontentloaded", timeout=20000)
+        return _extraer_ean_tata(page)
+    except Exception:
+        return None
+
+
+def enriquecer_eans_playwright(page, pendientes):
+    if not pendientes:
+        return
+    total = len(pendientes)
+    encontrados = 0
+    print(f"  Enriqueciendo EAN via Playwright para {total} productos...")
+    with app.app_context():
+        for i, (product_id, slug) in enumerate(pendientes, 1):
+            product = db.session.get(Product, product_id)
+            if not product:
+                continue
+            time.sleep(random.uniform(0.8, 2.0))
+            ean = fetch_ean_playwright(page, slug)
+            if not ean or product.ean:
+                print(f"  ✗ {i}/{total}: {product.name[:55]}")
+                continue
+            encontrados += 1
+            print(f"  ✓ {i}/{total}: {product.name[:50]} → {ean}")
+            existente = Product.query.filter_by(ean=ean).first()
+            if existente and existente.productId != product_id:
+                print(f"  [EAN-MERGE] '{product.name}' → '{existente.name}' (EAN {ean})")
+                for sp in StoreProduct.query.filter_by(productId=product.productId).all():
+                    conflicto = StoreProduct.query.filter_by(
+                        storeId=sp.storeId, productId=existente.productId
+                    ).first()
+                    if conflicto:
+                        for snap in PriceSnapshot.query.filter_by(storeProductId=sp.storeProductId).all():
+                            snap.storeProductId = conflicto.storeProductId
+                        for ofr in Offer.query.filter_by(storeProductId=sp.storeProductId).all():
+                            ofr.storeProductId = conflicto.storeProductId
+                        db.session.flush()
+                        db.session.delete(sp)
+                    else:
+                        sp.productId = existente.productId
+                for pc in ProductCategory.query.filter_by(productId=product.productId).all():
+                    existe_pc = ProductCategory.query.filter_by(
+                        productId=existente.productId, categoryId=pc.categoryId
+                    ).first()
+                    if existe_pc:
+                        db.session.delete(pc)
+                    else:
+                        pc.productId = existente.productId
+                if not existente.imageURL and product.imageURL:
+                    existente.imageURL = product.imageURL
+                db.session.flush()
+                db.session.delete(product)
+            else:
+                product.ean = ean
+        db.session.commit()
 
 
 def scrape_categoria(category_slug, pagina=0, cantidad=50):
@@ -116,11 +216,24 @@ def scrape_categoria(category_slug, pagina=0, cantidad=50):
         "query": QUERY,
     }
 
-    try:
-        response = requests.post(ENDPOINT, json=payload, headers=HEADERS, timeout=30)
-    except requests.exceptions.Timeout:
-        print(f"  Timeout en página {pagina}, saltando...")
-        return []
+    for intento in range(3):
+        try:
+            response = requests.post(ENDPOINT, json=payload, headers=HEADERS, timeout=30)
+            if response.status_code in (403, 429):
+                print(f"  [{response.status_code}] Bot detection (intento {intento+1}/3), esperando {15*(intento+1)}s...")
+                if intento < 2:
+                    time.sleep(15 * (intento + 1))
+                    continue
+                print(f"  3 intentos fallidos en página {pagina}, saltando...")
+                return []
+            break
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            print(f"  Error red (intento {intento+1}/3): {e}")
+            if intento < 2:
+                time.sleep(5 * (intento + 1))
+            else:
+                print(f"  3 intentos fallidos en página {pagina}, saltando...")
+                return []
     if response.status_code >= 500:
         return []
     response.raise_for_status()
@@ -138,7 +251,8 @@ def scrape_categoria(category_slug, pagina=0, cantidad=50):
                 "sku": p["sku"],
                 "nombre_externo": p["name"],
                 "marca_externa": p["brand"]["name"],
-                "gtin": p.get("gtin") if _ean13_valido(p.get("gtin")) else None,
+                "gtin": p.get("gtin") if ean13_valido(p.get("gtin")) else None,
+                "slug": p.get("slug"),
                 "imagen": p["image"][0]["url"] if p["image"] else None,
                 "precio": oferta["price"],
                 "precio_lista": oferta["listPrice"],
@@ -163,10 +277,16 @@ def guardar_en_db(productos):
             return
 
         store_id = store.storeId
+        pendientes = []
 
         for p in productos:
             # Buscar producto por GTIN en el catálogo normalizado
             product = Product.query.filter_by(ean=p["gtin"]).first() if p["gtin"] else None
+            if product and p["gtin"]:
+                sim = jaccard_similarity(p["nombre_externo"], product.normalizedName)
+                if sim < 0.3:
+                    print(f"  [EAN-ZOMBIE] EAN {p['gtin']} descartado: '{p['nombre_externo']}' vs '{product.name}'")
+                    product = None
 
             # Fallback 1: buscar por nombre normalizado exacto
             if not product:
@@ -211,6 +331,8 @@ def guardar_en_db(productos):
             # Si encontró producto CKAN sin EAN, enriquecerlo con el GTIN de Ta-Ta
             if product and p["gtin"] and not product.ean:
                 product.ean = p["gtin"]
+            elif product and not product.ean and p.get("slug"):
+                pendientes.append((product.productId, p["slug"]))
 
             if not product:
                 # No existe en DB, crear producto nuevo con datos de Ta-Ta
@@ -231,7 +353,8 @@ def guardar_en_db(productos):
                 )
                 db.session.add(product)
                 db.session.flush()
-
+                if p.get("slug") and not product.ean:
+                    pendientes.append((product.productId, p["slug"]))
 
             # Buscar o crear store_product
             store_product = StoreProduct.query.filter_by(
@@ -307,30 +430,70 @@ def guardar_en_db(productos):
 
         db.session.commit()
         print(f"Guardados {len(productos)} productos en la base de datos")
+        return pendientes
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", action="store_true", help="Scrapea solo 1 categoría, 1 página")
+    parser.add_argument("--categoria", choices=list(TATA_CATEGORIAS.keys()), help="Scrapea solo esta categoría")
     args = parser.parse_args()
 
     categorias = list(TATA_CATEGORIAS.items())
     if args.test:
         categorias = [("almacen", "Almacén")]
         print("[TEST MODE] categoría: Almacén, 1 página")
+    elif args.categoria:
+        categorias = [(args.categoria, TATA_CATEGORIAS[args.categoria])]
+        print(f"[CATEGORIA] solo: {TATA_CATEGORIAS[args.categoria]}")
 
-    for slug, nombre in categorias:
-        pagina = 0
-        print(f"\n=== Categoría: {nombre} ===")
-        while True:
-            print(f"Scrapeando '{nombre}' página {pagina}...")
-            productos = scrape_categoria(category_slug=slug, pagina=pagina)
-            if not productos:
-                print("Sin productos. Fin.")
-                break
-            guardar_en_db(productos)
-            pagina += 1
-            if args.test:
-                break
-            time.sleep(1)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        context = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            locale="es-UY",
+        )
+        context.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+        page = context.new_page()
+
+        try:
+            for slug, nombre in categorias:
+                pagina = 0
+                print(f"\n=== Categoría: {nombre} ===")
+                while True:
+                    print(f"Scrapeando '{nombre}' página {pagina}...")
+                    productos = scrape_categoria(category_slug=slug, pagina=pagina)
+                    if not productos:
+                        print("Sin productos. Fin.")
+                        break
+                    pendientes = guardar_en_db(productos)
+                    enriquecer_eans_playwright(page, pendientes)
+                    pagina += 1
+                    if args.test:
+                        break
+                    time.sleep(random.uniform(2.5, 5.0))
+        finally:
+            context.close()
+            browser.close()
+
+    with app.app_context():
+        sin_ean = (
+            db.session.query(Product)
+            .join(StoreProduct, StoreProduct.productId == Product.productId)
+            .join(Store, Store.storeId == StoreProduct.storeId)
+            .join(StoreChain, StoreChain.storeChainId == Store.storeChainId)
+            .filter(StoreChain.name == STORE_CHAIN_NAME, Product.ean == None)
+            .count()
+        )
+        print(f"\n=== Resumen final ===")
+        print(f"Productos Ta-Ta sin EAN en DB: {sin_ean}")

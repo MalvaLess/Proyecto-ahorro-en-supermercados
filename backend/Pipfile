@@ -12,6 +12,7 @@ python-dotenv = "*"
 flask-jwt-extended = "*"
 flask-cors = "*"
 playwright = "*"
+requests = "*"
 
 [dev-packages]
 
