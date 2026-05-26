@@ -24,7 +24,7 @@ def login_user(data):
     
     user = User.query.filter_by(email=email).first()
 
-    if User is None:
+    if user is None:  # corregido: era "User" (la clase) en vez de "user" (la instancia)
         return None, {
             "message": "Credenciales inválidas"
         }, 401

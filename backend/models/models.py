@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, Numeric, String, ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -36,7 +37,7 @@ class User(db.Model):
 
     def check_password(self, password: str):
         return check_password_hash(self.passwordHash, password)
-    
+
     def deactivate(self):
         self.isActive = False
 
@@ -49,7 +50,7 @@ class User(db.Model):
             "isActive": self.isActive,
             "lastLoginAt": self.lastLoginAt.isoformat() if self.lastLoginAt else None,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -71,7 +72,7 @@ class StoreChain(db.Model):
             "name": self.name,
             "isActive": self.isActive,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -105,16 +106,15 @@ class Store(db.Model):
         return {
             "storeId": self.storeId,
             "storeChainId": self.storeChainId,
-            "chain": {
-                "storeChainId": self.chain.storeChainId,
-                "name": self.chain.name
-            } if self.chain else None,
+            "chain": {"storeChainId": self.chain.storeChainId, "name": self.chain.name}
+            if self.chain
+            else None,
             "address": self.address,
             "latitude": float(self.latitude) if self.latitude is not None else None,
             "longitude": float(self.longitude) if self.longitude is not None else None,
             "isActive": self.isActive,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -122,6 +122,7 @@ class Brand(db.Model):
     __tablename__ = "brand"
     brandId: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
+    normalizedName: Mapped[str] = mapped_column(String(50), nullable=True, index=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
@@ -134,7 +135,7 @@ class Brand(db.Model):
             "brandId": self.brandId,
             "name": self.name,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -142,7 +143,7 @@ class Category(db.Model):
     __tablename__ = "category"
 
     categoryId: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
@@ -157,8 +158,9 @@ class Category(db.Model):
             "categoryId": self.categoryId,
             "name": self.name,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updateAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
+
 
 class Product(db.Model):
     __tablename__ = "product"
@@ -167,16 +169,16 @@ class Product(db.Model):
     externalIdCkan: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )  # id.producto en CKAN
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
-    normalizedName: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    normalizedName: Mapped[str] = mapped_column(String(255), nullable=False)
     ean: Mapped[str] = mapped_column(String(50), nullable=True)
-    description: Mapped[str] = mapped_column(String(50), nullable=True)
+    description: Mapped[str] = mapped_column(String(255), nullable=True)
     weightValue: Mapped[float] = mapped_column(
         Numeric(precision=10, scale=2), nullable=True
     )
     unit: Mapped[str] = mapped_column(String(5), nullable=False)
     format: Mapped[str] = mapped_column(String(50), nullable=True)
-    imageURL: Mapped[str] = mapped_column(String(255), nullable=True)
+    imageURL: Mapped[str] = mapped_column(String(500), nullable=True)
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
@@ -205,16 +207,17 @@ class Product(db.Model):
         return {
             "productId": self.productId,
             "brandId": self.brandId,
-            "brand": {
-                "brandId": self.brand.brandId,
-                "name": self.brand.name
-            } if self.brand else None,
+            "brand": {"brandId": self.brand.brandId, "name": self.brand.name}
+            if self.brand
+            else None,
             "externalIdCkan": self.externalIdCkan,
             "name": self.name,
             "normalizedName": self.normalizedName,
             "ean": self.ean,
             "description": self.description,
-            "weightValue": float(self.weightValue) if self.weightValue is not None else None,
+            "weightValue": float(self.weightValue)
+            if self.weightValue is not None
+            else None,
             "unit": self.unit,
             "format": self.format,
             "imageURL": self.imageURL,
@@ -222,13 +225,13 @@ class Product(db.Model):
             "categories": [
                 {
                     "categoryId": product_category.category.categoryId,
-                    "name": product_category.category.name
+                    "name": product_category.category.name,
                 }
                 for product_category in self.categories
                 if product_category.category is not None
             ],
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
 
 
@@ -255,8 +258,10 @@ class ProductCategory(db.Model):
             "categoryId": self.categoryId,
             "category": {
                 "categoryId": self.category.categoryId,
-                "name": self.category.name
-            } if self.category else None
+                "name": self.category.name,
+            }
+            if self.category
+            else None,
         }
 
 
@@ -288,10 +293,7 @@ class StoreProduct(db.Model):
         "ShoppingListItem", back_populates="selectedStoreProduct"
     )
 
-    offers: Mapped[list["Offer"]] = relationship(
-        "Offer",
-        back_populates="storeProduct"
-    )
+    offers: Mapped[list["Offer"]] = relationship("Offer", back_populates="storeProduct")
 
     __table_args__ = (
         db.UniqueConstraint("storeId", "productId", name="uq_store_product"),
@@ -306,9 +308,13 @@ class StoreProduct(db.Model):
                 "address": self.store.address,
                 "chain": {
                     "storeChainId": self.store.chain.storeChainId,
-                    "name": self.store.chain.name
-                } if self.store and self.store.chain else None
-            } if self.store else None,
+                    "name": self.store.chain.name,
+                }
+                if self.store and self.store.chain
+                else None,
+            }
+            if self.store
+            else None,
             "productId": self.productId,
             "product": {
                 "productId": self.product.productId,
@@ -316,16 +322,21 @@ class StoreProduct(db.Model):
                 "normalizedName": self.product.normalizedName,
                 "brand": {
                     "brandId": self.product.brand.brandId,
-                    "name": self.product.brand.name
-                } if self.product and self.product.brand else None
-            } if self.product else None,
+                    "name": self.product.brand.name,
+                }
+                if self.product and self.product.brand
+                else None,
+            }
+            if self.product
+            else None,
             "externalSku": self.externalSku,
             "externalName": self.externalName,
             "externalBrand": self.externalBrand,
             "isAvailable": self.isAvailable,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }
+
 
 class PriceSnapshot(db.Model):
     __tablename__ = "price_snapshot"
@@ -338,6 +349,7 @@ class PriceSnapshot(db.Model):
     )
     currency: Mapped[str] = mapped_column(String(50), nullable=False, default="UYU")
     capturedAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    # eliminadas definiciones duplicadas de currency y capturedAt
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     source: Mapped[str] = mapped_column(
         String(10), nullable=False, default="SCRAPER"
@@ -359,44 +371,47 @@ class PriceSnapshot(db.Model):
                 "storeProductId": self.storeProduct.storeProductId,
                 "product": {
                     "productId": self.storeProduct.product.productId,
-                    "name": self.storeProduct.product.name
-                } if self.storeProduct.product else None,
+                    "name": self.storeProduct.product.name,
+                }
+                if self.storeProduct.product
+                else None,
                 "store": {
                     "storeId": self.storeProduct.store.storeId,
                     "address": self.storeProduct.store.address,
                     "chain": {
                         "storeChainId": self.storeProduct.store.chain.storeChainId,
-                        "name": self.storeProduct.store.chain.name
-                    } if self.storeProduct.store.chain else None
-                } if self.storeProduct.store else None
-            } if self.storeProduct else None
+                        "name": self.storeProduct.store.chain.name,
+                    }
+                    if self.storeProduct.store.chain
+                    else None,
+                }
+                if self.storeProduct.store
+                else None,
+            }
+            if self.storeProduct
+            else None,
         }
 
 
 class Offer(db.Model):
     __tablename__ = "offer"
-    offerId: Mapped[int] = mapped_column(primary_key= True)
+    offerId: Mapped[int] = mapped_column(primary_key=True)
     storeProductId: Mapped[int] = mapped_column(
-        ForeignKey("store_product.storeProductId"),
-        nullable=False
+        ForeignKey("store_product.storeProductId"), nullable=False
     )
     offerType: Mapped[str] = mapped_column(String(15), nullable=False)
     offerPrice: Mapped[Decimal | None] = mapped_column(
-        Numeric(precision=10, scale=2), 
-        nullable=True, 
-        default=0
+        Numeric(precision=10, scale=2), nullable=True, default=0
     )
     currency: Mapped[str] = mapped_column(String(10), nullable=True, default="UYU")
     isActive: Mapped[bool] = mapped_column(default=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
-        server_default=func.now(), 
-        onupdate=func.now()
+        server_default=func.now(), onupdate=func.now()
     )
 
     storeProduct: Mapped["StoreProduct"] = relationship(
-        "StoreProduct",
-        back_populates="offers"
+        "StoreProduct", back_populates="offers"
     )
 
     schedules: Mapped[list["OfferSchedule"]] = relationship(
@@ -435,10 +450,8 @@ class Offer(db.Model):
 
 class OfferSchedule(db.Model):
     __tablename__ = "offer_schedule"
-    offerScheduleId: Mapped[int] = mapped_column(primary_key= True)
-    offerId: Mapped[int] = mapped_column(
-        ForeignKey("offer.offerId")
-    )
+    offerScheduleId: Mapped[int] = mapped_column(primary_key=True)
+    offerId: Mapped[int] = mapped_column(ForeignKey("offer.offerId"))
     dayOfWeek: Mapped[int] = mapped_column(Integer, nullable=False)
     #1 = Lunes
     #2 = Martes
