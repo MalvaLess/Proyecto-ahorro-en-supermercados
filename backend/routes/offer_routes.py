@@ -9,13 +9,7 @@ from services.offer_service import (
     deactivate_offer
 )
 
-=========
-
-from services.offer_service import get_offers, create_offer, update_offer, delete_offer
->>>>>>>>> Temporary merge branch 2
-
 offer_bp = Blueprint("offers", __name__)
-
 
 @offer_bp.route("/", methods=["GET"])
 def list_offers():
@@ -122,4 +116,3 @@ def delete(offer_id):
         "success": True,
         "message": "Oferta desactivada correctamente"
     }), status_code
->>>>>>>>> Temporary merge branch 2
