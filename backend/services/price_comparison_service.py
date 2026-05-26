@@ -1,4 +1,4 @@
-from models.models import db, Product, StoreProduct, PriceSnapshot, Store
+from models.models import db, Product, StoreProduct, PriceSnapshot, Offer
 
 
 def parse_chain_ids(chain_ids_raw):
@@ -29,6 +29,13 @@ def get_latest_price(store_product_id):
         PriceSnapshot.priceSnapshotId.desc()
     ).first()
 
+def get_active_offer(store_product_id):
+    return Offer.query.filter_by(
+        storeProductId=store_product_id,
+        isActive=True
+    ).order_by(
+        Offer.offerId.desc()
+    ).first()
 
 def compare_product_prices(product_id, chain_ids=None):
     product = db.session.get(Product, product_id)
@@ -56,16 +63,14 @@ def compare_product_prices(product_id, chain_ids=None):
 
     for store_product in store_products:
         latest_price = get_latest_price(store_product.storeProductId)
-        if not latest_price:
-            continue
+        active_offer = get_active_offer(store_product.storeProductId)
 
-        chain = store_product.store.chain if store_product.store else None
-        chain_id = chain.storeChainId if chain else None
-        chain_name = chain.name if chain else None
-        price_val = float(latest_price.price)
-        source = latest_price.source
+        normal_price = latest_price.price if latest_price else None
+        offer_price = active_offer.offerPrice if active_offer else None
 
-        candidate = {
+        final_price = offer_price if offer_price is not None else normal_price
+
+        items.append({
             "storeProductId": store_product.storeProductId,
             "storeId": store_product.storeId,
             "storeName": chain_name,
@@ -73,32 +78,24 @@ def compare_product_prices(product_id, chain_ids=None):
             "externalSku": store_product.externalSku,
             "externalName": store_product.externalName,
             "externalBrand": store_product.externalBrand,
-            "price": price_val,
-            "currency": latest_price.currency,
-            "capturedAt": latest_price.capturedAt.isoformat() if latest_price.capturedAt else None,
-            "source": source,
-        }
-
-        existing = cadenas.get(chain_id)
-        if not existing:
-            cadenas[chain_id] = candidate
-        else:
-            # SCRAPER gana sobre CKAN; entre mismo source, precio más bajo
-            existing_scraper = existing["source"] == "SCRAPER"
-            new_scraper = source == "SCRAPER"
-            if new_scraper and not existing_scraper:
-                cadenas[chain_id] = candidate
-            elif not new_scraper and existing_scraper:
-                pass
-            elif price_val < existing["price"]:
-                cadenas[chain_id] = candidate
-
-    items = list(cadenas.values())
+            "price": float(latest_price.price) if latest_price else None,
+            "hasOffer": active_offer is not None,
+            "offer": {
+                "offerId": active_offer.offerId,
+                "offerType": active_offer.offerType,
+                "offerPrice": float(active_offer.offerPrice) if active_offer.offerPrice is not None else None,
+                "currency": active_offer.currency,
+                "isActive": active_offer.isActive
+            } if active_offer else None,
+            "finalPrice": float(final_price) if final_price is not None else None,
+            "currency": latest_price.currency if latest_price else None,
+            "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
+        })
 
     items.sort(
         key=lambda item: (
-            item["price"] is None,
-            item["price"] if item["price"] is not None else 0
+            item["finalPrice"] is None,
+            item["finalPrice"] if item["finalPrice"] is not None else 0
         )
     )
 

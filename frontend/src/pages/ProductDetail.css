@@ -1,0 +1,177 @@
+.product-detail-page {
+  min-height: 100vh;
+
+  padding: 140px 80px;
+
+  background-color: #f7f7f7;
+}
+
+/* CONTAINER */
+
+.product-detail-container {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 70px;
+
+  align-items: center;
+}
+
+/* COLUMNA IZQUIERDA */
+
+.product-left {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+}
+
+.product-left h1 {
+  font-size: 56px;
+
+  margin-bottom: 25px;
+
+  color: #1f1f1f;
+
+  text-align: center;
+}
+
+.product-description {
+  font-size: 20px;
+
+  color: #666;
+
+  line-height: 1.7;
+
+  text-align: center;
+
+  margin-bottom: 40px;
+
+  max-width: 500px;
+}
+
+/* IMAGEN */
+
+.product-image {
+  background-color: white;
+
+  border-radius: 32px;
+
+  padding: 50px;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+
+  width: 80%;
+}
+
+.product-image img {
+  width: 80%;
+
+  max-width: 400px;
+
+  display: block;
+
+  margin: auto;
+
+  object-fit: contain;
+}
+
+/* COLUMNA DERECHA */
+
+.product-info {
+  display: flex;
+
+  flex-direction: column;
+}
+
+/* SUPERMERCADOS */
+
+.markets-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 21px;
+  margin-top: 150px;
+
+  margin-bottom: 20px;
+}
+
+.market-card {
+  background-color: white;
+  border-radius: 20px;
+  padding: 20px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: 0.3s;
+  border: 2px solid transparent;
+}
+
+.market-card:hover {
+  transform: translateY(-3px);
+}
+
+/* MÁS BARATO */
+
+.market-card.best-price {
+  background-color: #f1fff2;
+
+  border: 2px solid #7bc67e;
+}
+
+/* SELECCIONADO */
+
+.market-card.selected {
+  border: 2px solid #2e7d32;
+
+  background-color: #e8f5e9;
+}
+
+.market-card span {
+  font-size: 20px;
+
+  color: #666;
+}
+
+.market-card strong {
+  font-size: 24px;
+
+  color: #2e7d32;
+}
+
+/* BOTÓN */
+
+.add-cart-btn {
+  margin-top: 20px;
+
+  width: 100%;
+
+  height: 70px;
+
+  border: none;
+
+  border-radius: 22px;
+
+  background-color: #2e7d32;
+
+  color: white;
+
+  font-size: 22px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.add-cart-btn:hover {
+  background-color: #256428;
+
+  transform: translateY(-3px);
+}

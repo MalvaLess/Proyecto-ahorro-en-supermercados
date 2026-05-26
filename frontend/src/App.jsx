@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
@@ -7,15 +8,20 @@ import About from './pages/About'
 import Login from './pages/Login'
 import ProductsCategory from './pages/ProductsCategory'
 import Register from './pages/Register'
+import ProductDetail from './pages/ProductDetail'
+import Cart from './pages/Cart'
+
 
 
 function App() {
+
+  const [cart, setCart] = useState([])
 
   return (
 
     <BrowserRouter>
 
-      <Navbar />
+      <Navbar cart={cart} />
 
       <Routes>
 
@@ -29,12 +35,13 @@ function App() {
 
         <Route path="/login" element={<Login />} />
 
-        <Route path="/products/:category"element={<ProductsCategory />}/>
-
-        <Route path="/login" element={<Login />} />
+        <Route path="/products/:category" element={<ProductsCategory />} />
 
         <Route path="/register" element={<Register />} />
 
+        <Route path="/product/:id" element={<ProductDetail cart={cart} setCart={setCart} />} />
+
+        <Route path="/cart" element={<Cart cart={cart} setCart={setCart} />} />
 
 
       </Routes>

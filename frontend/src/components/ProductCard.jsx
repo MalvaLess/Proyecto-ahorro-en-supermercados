@@ -1,20 +1,41 @@
 import './ProductCard.css'
+import { Link } from 'react-router-dom'
 
-function ProductCard({ image, name, price }) {
+function ProductCard({ product }) {
+
   return (
-    <div className="product-card">
 
-      <img src={image} alt={name} />
+    <Link
+      to={`/product/${product.slug}`}
+      className="product-card"
+    >
+      <img
+        src={product.image}
+        alt={product.name}
+      />
 
-      <h3>{name}</h3>
+      <h3>{product.name}</h3>
 
-      <p>${price}</p>
+      <div className="prices-list">
 
-      <button>
-        Agregar al carrito
-      </button>
+        {
+          product.prices.map((item, index) => (
 
-    </div>
+            <div className="price-row" key={index}>
+
+              <span>{item.market}</span>
+
+              <strong>{item.price}</strong>
+
+            </div>
+
+          ))
+        }
+
+      </div>
+
+    </Link>
+
   )
 }
 

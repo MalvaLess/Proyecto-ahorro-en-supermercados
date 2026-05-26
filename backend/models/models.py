@@ -422,14 +422,28 @@ class Offer(db.Model):
         return {
             "offerId": self.offerId,
             "storeProductId": self.storeProductId,
+            "storeProduct": {
+                "storeProductId": self.storeProduct.storeProductId,
+                "product": {
+                    "productId": self.storeProduct.product.productId,
+                    "name": self.storeProduct.product.name
+                } if self.storeProduct.product else None,
+                "store": {
+                    "storeId": self.storeProduct.store.storeId,
+                    "address": self.storeProduct.store.address,
+                    "chain": {
+                        "storeChainId": self.storeProduct.store.chain.storeChainId,
+                        "name": self.storeProduct.store.chain.name
+                    } if self.storeProduct.store.chain else None
+                } if self.storeProduct.store else None
+            } if self.storeProduct else None,
             "offerType": self.offerType,
             "offerPrice": float(self.offerPrice) if self.offerPrice is not None else None,
             "currency": self.currency,
             "isActive": self.isActive,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
-            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
+            "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None
         }
-
 
 class OfferSchedule(db.Model):
     __tablename__ = "offer_schedule"
@@ -460,6 +474,24 @@ class Favorite(db.Model):
     __table_args__ = (
         db.UniqueConstraint("userId", "productId", name="uq_user_product_favorite"),
     )
+
+    def to_dict(self):
+        return {
+            "favoriteId": self.favoriteId,
+            "userId": self.userId,
+            "productId": self.productId,
+            "product": {
+                "productId": self.product.productId,
+                "name": self.product.name,
+                "normalizedName": self.product.normalizedName,
+                "imageURL": self.product.imageURL,
+                "brand": {
+                    "brandId": self.product.brand.brandId,
+                    "name": self.product.brand.name
+                } if self.product and self.product.brand else None
+            } if self.product else None,
+            "createdAt": self.createdAt.isoformat() if self.createdAt else None
+        }
 
 
 class ShoppingList(db.Model):
