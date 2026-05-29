@@ -1,218 +1,18 @@
 import './ProductDetail.css'
+import products from '../data/products'
 import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
-import lecheImg from '../assets/Sabor_Original_Opt_329b4b6db5.png'
-import yogurtGriego from '../assets/627C4B7F7239395D.png!c750x0.jpeg'
-import quesoParmesano from '../assets/queso-parmesano-latti-100-g-01.png'
-import tomates from '../assets/Fresh-Tomato-PNG-Picture.png'
-import lechuga from '../assets/360_F_563197320_gNMb7ZZookMZmYGt0kANZZDmIChNm014.jpg'
-import mandarinas from '../assets/images (1).jpeg'
 
 function ProductDetail({ cart, setCart }) {
 
     const { id } = useParams()
-
-    const products = [
-
-        {
-            slug: 'leche-alpina',
-
-            category: 'lacteos',
-
-            name: 'Leche Alpina',
-
-            image: lecheImg,
-
-            description:
-                'Leche entera ideal para el desayuno y consumo diario.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$4.800'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$5.200'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$4.950'
-                }
-
-            ]
-        },
-
-        {
-            slug: 'yogurt-griego',
-
-            category: 'lacteos',
-
-            name: 'Yogurt Griego',
-
-            image: yogurtGriego,
-
-            description:
-                'Yogurt griego natural alto en proteína.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$6.200'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$6.500'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$6.100'
-                }
-
-            ]
-        },
-
-        {
-            slug: 'queso-parmesano',
-
-            category: 'lacteos',
-
-            name: 'Queso Parmesano',
-
-            image: quesoParmesano,
-
-            description:
-                'Queso parmesano ideal para pastas y comidas italianas.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$8.500'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$8.900'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$8.300'
-                }
-
-            ]
-        },
-
-        {
-            slug: 'tomates',
-
-            category: 'verduras',
-
-            name: 'Tomates',
-
-            image: tomates,
-
-            description:
-                'Tomates frescos seleccionados diariamente.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$2.800'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$3.100'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$2.950'
-                }
-
-            ]
-        },
-
-        {
-            slug: 'lechuga',
-
-            category: 'verduras',
-
-            name: 'Lechuga',
-
-            image: lechuga,
-
-            description:
-                'Lechuga fresca ideal para ensaladas saludables.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$1.900'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$2.200'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$2.000'
-                }
-
-            ]
-        },
-
-        {
-            slug: 'mandarinas',
-
-            category: 'verduras',
-
-            name: 'Mandarinas',
-
-            image: mandarinas,
-
-            description:
-                'Mandarinas dulces y frescas de temporada.',
-
-            prices: [
-
-                {
-                    market: 'D1',
-                    price: '$1.900'
-                },
-
-                {
-                    market: 'Éxito',
-                    price: '$2.200'
-                },
-
-                {
-                    market: 'Ara',
-                    price: '$2.000'
-                }
-
-            ]
-        }
-
-    ]
 
     const product = products.find(
         item => item.slug === id
     )
 
     const [selectedMarket, setSelectedMarket] = useState(null)
+
     const addToCart = () => {
 
         if (!selectedMarket) return
@@ -258,27 +58,28 @@ function ProductDetail({ cart, setCart }) {
 
         <section className="product-detail-page">
 
-            <div className="back-links">
-
-                <Link to={`/products/${product.category}`}>
-
-                    ← Volver a {product.category}
-
-                </Link>
-
-            </div>
-
             <div className="product-detail-container">
 
-                <div className="product-left">
+                <div className="product-left-column">
 
-                    <h1>{product.name}</h1>
+                    <div className="back-links">
+                        <Link to={`/products/${product.category}`}>
+                            ← Volver a {product.category}
+                        </Link>
+                    </div>
 
-                    <p className="product-description">
-                        {product.description}
-                    </p>
+                    <div className="product-header">
 
-                    <div className="product-image">
+
+                        <h1>{product.name}</h1>
+
+                        <p className="product-description">
+                            {product.description}
+                        </p>
+
+                    </div>
+
+                    <div className="product-image-card">
 
                         <img
                             src={product.image}
@@ -289,15 +90,23 @@ function ProductDetail({ cart, setCart }) {
 
                 </div>
 
-                <div className="product-info">
+                <div className="product-right-column">
 
-                    <div className="markets-list">
+                    <div className="availability-box">
+                        🛒 Disponible en {product.prices.length} supermercados
+                    </div>
 
-                        <p className="market-helper-text">
+                    <div className="markets-section">
 
-                            Compara precios y elige la mejor opción para ti.
+                        <div className="markets-header">
 
-                        </p>
+                            <h3>Selecciona el supermercado que prefieras</h3>
+
+                            <span>
+                                
+                            </span>
+
+                        </div>
 
                         {
                             product.prices.map((item, index) => (
@@ -312,7 +121,19 @@ function ProductDetail({ cart, setCart }) {
                                     onClick={() => setSelectedMarket(item)}
                                 >
 
-                                    <span>{item.market}</span>
+                                    <div className="market-left">
+
+                                        <span>{item.market}</span>
+
+                                        {
+                                            index === 0 && (
+                                                <small>
+                                                    Mejor precio
+                                                </small>
+                                            )
+                                        }
+
+                                    </div>
 
                                     <strong>{item.price}</strong>
 
@@ -323,13 +144,12 @@ function ProductDetail({ cart, setCart }) {
 
                     </div>
 
+
                     <button
                         className="add-cart-btn"
                         onClick={addToCart}
                     >
-
-                        Agregar a mi lista
-
+                        Agrega producto a tu lista
                     </button>
 
                 </div>

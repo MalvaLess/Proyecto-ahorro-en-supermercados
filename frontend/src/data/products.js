@@ -16,8 +16,10 @@ const products = [
 
         name: 'Leche Alpina',
 
-        image: lecheImg,
+        description:
+            'Leche entera larga vida ideal para desayuno y consumo diario.',
 
+        image: lecheImg,
 
         prices: [
 
@@ -47,6 +49,9 @@ const products = [
         category: 'lacteos',
 
         name: 'Yogurt Griego',
+
+        description:
+            'Yogurt griego natural alto en proteína y bajo en grasa.',
 
         image: yogurtGriego,
 
@@ -79,8 +84,10 @@ const products = [
 
         name: 'Queso Parmesano',
 
-        image: quesoParmesano,
+        description:
+            'Queso parmesano ideal para pastas y comidas italianas.',
 
+        image: quesoParmesano,
 
         prices: [
 
@@ -101,7 +108,6 @@ const products = [
 
         ]
 
-
     },
 
     {
@@ -112,6 +118,9 @@ const products = [
         category: 'verduras',
 
         name: 'Tomates',
+
+        description:
+            'Tomates frescos seleccionados diariamente para ensaladas y cocina.',
 
         image: tomates,
 
@@ -145,6 +154,9 @@ const products = [
 
         name: 'Lechuga',
 
+        description:
+            'Lechuga fresca y crujiente ideal para comidas saludables.',
+
         image: lechuga,
 
         prices: [
@@ -176,8 +188,10 @@ const products = [
 
         name: 'Mandarinas',
 
-        image: mandarinas,
+        description:
+            'Mandarinas dulces y frescas ricas en vitamina C.',
 
+        image: mandarinas,
 
         prices: [
 
@@ -197,7 +211,6 @@ const products = [
             }
 
         ]
-
 
     }
 
