@@ -29,7 +29,7 @@ def get_day_name(day_of_week):
 
 def offer_schedule_to_dict(schedule):
     return {
-        "offerScheduleId": schedule.offerSheduleId,
+        "offerScheduleId": schedule.offerScheduleId,  # corregido: "offerShedule" → "offerSchedule" (typo causaba AttributeError en runtime)
         "offerId": schedule.offerId,
         "dayOfWeek": schedule.dayOfWeek,
         "dayName": get_day_name(schedule.dayOfWeek)

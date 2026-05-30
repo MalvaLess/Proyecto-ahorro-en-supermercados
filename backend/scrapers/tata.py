@@ -30,6 +30,7 @@ from models.models import (
 from datetime import datetime
 from sqlalchemy import literal, func
 from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
+from services.offer_service import upsert_scraper_offer, deactivate_scraper_offer
 
 ENDPOINT = "https://www.tata.com.uy/api/graphql"
 STORE_CHAIN_NAME = "Ta-Ta"
@@ -395,28 +396,10 @@ def guardar_en_db(productos):
                         ))
 
             # Detectar y registrar oferta cuando precio < precio de lista
-            oferta_existente = Offer.query.filter_by(
-                storeProductId=store_product.storeProductId,
-                offerType="DESCUENTO"
-            ).first()
-
             if p["precio"] < p["precio_lista"]:
-                if oferta_existente:
-                    oferta_existente.offerPrice = p["precio_lista"]
-                    oferta_existente.isActive = True
-                    oferta_existente.updatedAt = datetime.now()
-                else:
-                    db.session.add(Offer(
-                        storeProductId=store_product.storeProductId,
-                        offerType="DESCUENTO",
-                        offerPrice=p["precio_lista"],
-                        currency="UYU",
-                        isActive=True,
-                        updatedAt=datetime.now(),
-                    ))
-            elif oferta_existente and oferta_existente.isActive:
-                oferta_existente.isActive = False
-                oferta_existente.updatedAt = datetime.now()
+                upsert_scraper_offer(store_product.storeProductId, p["precio"])
+            else:
+                deactivate_scraper_offer(store_product.storeProductId)
 
             # Siempre insertar nuevo precio (precio actual = lo que paga el cliente)
             snapshot = PriceSnapshot(

@@ -75,7 +75,7 @@ def update_category(category_id, data):
     if "name" in data:
         name = data.get("name")
 
-        if name is None or str(name).strip == "":
+        if name is None or str(name).strip() == "":  # strip() con paréntesis: llama al método, no compara el objeto
             return None, {
                 "message": "El nombre de la categoría no puede estar vacío"
             }, 400

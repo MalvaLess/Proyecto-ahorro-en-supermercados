@@ -109,25 +109,18 @@ def update_user(user_id, data):
 
         user.set_password(password)
 
-    if "isActive" in data:  # corregido: ya no contiene lógica de email ni el commit
+    if "isActive" in data:
         user.isActive = data["isActive"]
 
-        if existing_user:
-            return None, {
-                "message": "Ya existe otro usuario con ese email"
-            }, 409
-        
-        user.email = new_email
-
-        try:
-            db.session.commit()
-            return user, None, 200
-        except SQLAlchemyError as error:
-            db.session.rollback()
-            return None, {
-                "message": "Error al actualizar el usuario",
-                "error": str(error)
-            }, 500
+    try:
+        db.session.commit()
+        return user, None, 200
+    except SQLAlchemyError as error:
+        db.session.rollback()
+        return None, {
+            "message": "Error al actualizar el usuario",
+            "error": str(error)
+        }, 500
 
 def patch_user(user_id, authenticated_user_id, data):
     if user_id != authenticated_user_id:

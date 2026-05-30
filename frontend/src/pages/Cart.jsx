@@ -15,7 +15,7 @@ function Cart({ cart, setCart }) {
     const total = cart.reduce((acc, item) => {
 
         const cleanPrice = Number(
-            item.price.replace('$', '').replace('.', '')
+            item.price.replace('$', '').replace(/\./g, '').replace(',', '.')  // /\./g elimina TODOS los puntos (separador de miles UY), luego coma decimal → punto JS
         )
 
         return acc + cleanPrice

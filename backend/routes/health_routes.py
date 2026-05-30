@@ -19,7 +19,7 @@ def database_check():
             "success": True,
             "message": "Conexión a Postgres Exitosa"
         }, 200
-    except:
+    except Exception:  # bare except atraparía KeyboardInterrupt/SystemExit
         return {
             "success": False,
             "message": "Error al Conectar con PostgreSQL"
