@@ -5,7 +5,15 @@
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: #f7f9f7;
   color: #222;
+}
+
+h1,
+h2,
+h3,
+.hero-title,
+.section-title {
+  font-family: 'Sora', sans-serif;
 }

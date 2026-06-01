@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from models.models import User
+from models.models import db, User
 from services.auth_service import login_user
 
 auth_bp = Blueprint("auth", __name__)
@@ -29,7 +29,7 @@ def login():
 def me():
     user_id = int(get_jwt_identity())
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)  # API moderna SQLAlchemy 2.x: reemplaza User.query.get() deprecado
 
     if user is None:
         return jsonify({

@@ -7,8 +7,8 @@ from models.models import db, PriceSnapshot, StoreProduct
 
 
 def parse_decimal(value, field_name):
-    if value is None or str(value).strip == "":
-        raise ValueError(f"El campo {field_name} es obligatorio") 
+    if value is None or str(value).strip() == "":  # strip() con paréntesis: llama al método, no compara el objeto
+        raise ValueError(f"El campo {field_name} es obligatorio")
     
     try:
         return Decimal(str(value))

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
@@ -17,8 +18,24 @@ import Account from './pages/Account'
 
 function App() {
 
-  const [cart, setCart] = useState([])
+  const [cart, setCart] = useState(() => {
 
+    const savedCart = localStorage.getItem('cart')
+
+    return savedCart ? JSON.parse(savedCart) : []
+
+  })
+
+  useEffect(() => {
+
+    localStorage.setItem(
+      'cart',
+      JSON.stringify(cart)
+    )
+
+  }, [cart])
+
+  
   return (
 
     <BrowserRouter>
@@ -46,8 +63,8 @@ function App() {
 
         <Route path="/cart" element={<Cart cart={cart} setCart={setCart} />} />
 
-        <Route 
-          path='/account' 
+        <Route
+          path='/account'
           element={<ProtectedRoute>
             <Account />
           </ProtectedRoute>}

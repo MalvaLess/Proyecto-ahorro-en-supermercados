@@ -64,7 +64,7 @@ def create():
     
     return jsonify({
         "success": True,
-        "message": "Marca creada correctamente",
+        "message": "Categoría creada correctamente",
         "data": category.to_dict()
     }), status_code
  

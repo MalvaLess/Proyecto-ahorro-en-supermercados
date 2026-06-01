@@ -27,6 +27,7 @@ from models.models import (
 from datetime import datetime
 from sqlalchemy import literal, func
 from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
+from services.offer_service import upsert_scraper_offer, deactivate_scraper_offer
 
 STORE_CHAIN_NAME = "Tienda Inglesa"
 TI_BASE = "https://www.tiendainglesa.com.uy"
@@ -326,29 +327,10 @@ def guardar_en_db(productos, categoria_nombre=None):
 
             # Detectar y registrar oferta cuando hay precio de lista mayor al precio actual
             precio_lista = p.get("precio_lista")
-            if precio_lista:
-                oferta_existente = Offer.query.filter_by(
-                    storeProductId=store_product.storeProductId,
-                    offerType="DESCUENTO"
-                ).first()
-
-                if p["precio"] < precio_lista:
-                    if oferta_existente:
-                        oferta_existente.offerPrice = precio_lista
-                        oferta_existente.isActive = True
-                        oferta_existente.updatedAt = datetime.now()
-                    else:
-                        db.session.add(Offer(
-                            storeProductId=store_product.storeProductId,
-                            offerType="DESCUENTO",
-                            offerPrice=precio_lista,
-                            currency="UYU",
-                            isActive=True,
-                            updatedAt=datetime.now(),
-                        ))
-                elif oferta_existente and oferta_existente.isActive:
-                    oferta_existente.isActive = False
-                    oferta_existente.updatedAt = datetime.now()
+            if precio_lista and p["precio"] < precio_lista:
+                upsert_scraper_offer(store_product.storeProductId, p["precio"])
+            else:
+                deactivate_scraper_offer(store_product.storeProductId)
 
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
