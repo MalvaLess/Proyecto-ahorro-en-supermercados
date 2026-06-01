@@ -31,7 +31,7 @@ def parse_decimal(value, field_name):
         raise ValueError(f"El campo {field_name} debe ser numérico")
 
 
-def get_products(search=None, brand_id=None, category_id=None, is_active=None, page=1, per_page=10):
+def get_products(search=None, brand_id=None, category_id=None, is_active=None, page=1, per_page=40):
     query = Product.query
 
     if search:
@@ -56,7 +56,7 @@ def get_products(search=None, brand_id=None, category_id=None, is_active=None, p
         is_active_value = is_active.lower() == "true"
         query = query.filter(Product.isActive == is_active_value)
 
-    per_page = min(per_page, 50)
+    per_page = min(per_page, 40)
 
     return query.order_by(Product.productId.desc()).paginate(
         page=page,

@@ -155,3 +155,63 @@
 
   border-radius: 25px;
 }
+
+.products-pagination {
+  margin-top: 40px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 18px;
+}
+
+.products-pagination button {
+  padding: 12px 18px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  background-color: white;
+
+  color: #1f1f1f;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+
+  transition: 0.3s;
+}
+
+.products-pagination button:hover {
+  background-color: rgba(46,125,50,0.12);
+
+  color: #2e7d32;
+}
+
+.products-pagination button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+.pagination-pages {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.pagination-pages button.active {
+  background-color: #2e7d32;
+
+  color: white;
+}

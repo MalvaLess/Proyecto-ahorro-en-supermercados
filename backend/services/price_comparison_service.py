@@ -1,4 +1,4 @@
-from models.models import db, Product, StoreProduct, PriceSnapshot, Offer
+from models.models import db, Product, Store, StoreProduct, PriceSnapshot, Offer
 
 
 def parse_store_ids(store_ids_raw):
@@ -59,7 +59,7 @@ def get_active_offer(store_product_id):
         Offer.offerId.desc()
     ).first()
 
-def compare_product_prices(product_id, store_ids=None):
+def compare_product_prices(product_id, chain_ids=None):
     product = db.session.get(Product, product_id)
 
     if product is None:
@@ -72,8 +72,10 @@ def compare_product_prices(product_id, store_ids=None):
         StoreProduct.isAvailable == True
     )
 
-    if store_ids:
-        query = query.filter(StoreProduct.storeId.in_(store_ids))
+    if chain_ids:
+        query = query.join(Store, StoreProduct.storeId == Store.storeId).filter(
+            Store.storeChainId.in_(chain_ids)
+        )
 
     store_products = query.all()
 
