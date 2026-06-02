@@ -122,10 +122,114 @@
   color: #2e7d32;
 }
 
+.available-stores {
+  margin: 22px 0;
+
+  padding: 14px 18px;
+
+  border-radius: 18px;
+
+  background-color: #f7f7f7;
+
+  color: #666;
+
+  font-size: 15px;
+
+  font-weight: 500;
+}
+
+.prices-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 14px;
+
+  margin-top: 20px;
+}
+
+.price-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding-bottom: 12px;
+
+  border-bottom: 1px solid #eeeeee;
+}
+
+.market-info {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.market-info span {
+  color: #1f1f1f;
+
+  font-weight: 600;
+}
+
+.market-info small {
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  background-color: rgba(46,125,50,0.12);
+
+  color: #2e7d32;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.price-row strong {
+  color: #2e7d32;
+
+  font-size: 18px;
+}
+
+.saving-box {
+  margin-top: 24px;
+
+  padding: 14px 18px;
+
+  border-radius: 18px;
+
+  background-color: #f7f7f7;
+
+  color: #2e7d32;
+
+  font-weight: 700;
+
+  text-align: center;
+}
+
+.no-card-prices {
+  margin-top: 20px;
+
+  padding: 14px 18px;
+
+  border-radius: 18px;
+
+  background-color: #f7f7f7;
+
+  color: #666;
+
+  text-align: center;
+}
+
 .market-preview-row span:last-child {
   font-size: 15px;
   font-weight: 500;
   color: #4b5563;
   
 }
+
+
 

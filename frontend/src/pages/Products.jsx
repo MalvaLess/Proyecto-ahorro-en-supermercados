@@ -21,6 +21,20 @@ function Products() {
   const [error, setError] = useState('')
 
   const perPage = 20
+  
+  const chainIds = '1,2,3,4'
+
+  function formatPrice(value, currency) {
+    if (value === null || value === undefined) {
+      return 'Sin precio'
+    }
+
+    return new Intl.NumberFormat('es-UY', {
+      style: 'currency',
+      currency: currency || 'UYU',
+      maximumFractionDigits: 0
+    }).format(value)
+  }
 
   function buildProductsEndpoint(page = 1, searchValue = submittedSearch) {
     let endpoint = `/products?page=${page}&perPage=${perPage}`
@@ -44,6 +58,54 @@ function Products() {
     return parsedUrl.pathname.replace('/api', '') + parsedUrl.search
   }
 
+  async function getProductWithPrices(product) {
+    try {
+      const response = await apiRequest(
+        `/price-comparison/products/${product.productId}?chainIds=${chainIds}`
+      )
+
+      const priceItems = response.data.items || []
+
+      const prices = priceItems.map((item, index) => ({
+        market: item.storeChainName,
+        price: formatPrice(item.finalPrice, item.currency),
+        normalPrice: formatPrice(item.price, item.currency),
+        hasOffer: item.hasOffer,
+        isBestPrice: index === 0,
+        storeProductId: item.storeProductId
+      }))
+
+      const validPrices = priceItems
+        .filter(item => item.finalPrice !== null && item.finalPrice !== undefined)
+        .map(item => item.finalPrice)
+
+      const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : null
+      const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null
+
+      const saving = maxPrice && minPrice ? maxPrice - minPrice : 0
+
+      return {
+        ...product,
+        id: product.productId,
+        slug: product.productId,
+        image: product.imageURL || 'https://via.placeholder.com/300x220?text=Producto',
+        prices,
+        availableStores: prices.length,
+        saving: formatPrice(saving, priceItems[0]?.currency || 'UYU')
+      }
+    } catch (error) {
+      return {
+        ...product,
+        id: product.productId,
+        slug: product.productId,
+        image: product.imageURL || 'https://via.placeholder.com/300x220?text=Producto',
+        prices: [],
+        availableStores: 0,
+        saving: formatPrice(0, 'UYU')
+      }
+    }
+  }
+
   async function loadProducts(endpoint = null) {
     try {
       setLoading(true)
@@ -53,7 +115,11 @@ function Products() {
 
       const response = await apiRequest(requestEndpoint)
 
-      setProducts(response.data)
+      const productsWithPrices = await Promise.all(
+        response.data.map(product => getProductWithPrices(product))
+      )
+
+      setProducts(productsWithPrices)
       setPagination(response.pagination)
     } catch (error) {
       setError(error.message)

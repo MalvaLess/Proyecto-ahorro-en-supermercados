@@ -59,6 +59,42 @@ def get_active_offer(store_product_id):
         Offer.offerId.desc()
     ).first()
 
+def build_price_comparison_item(store_product):
+    latest_price = get_latest_price(store_product.storeProductId)
+    active_offer = get_active_offer(store_product.storeProductId)
+
+    normal_price = latest_price.price if latest_price else None
+    offer_price = active_offer.offerPrice if active_offer else None
+
+    final_price = offer_price if offer_price is not None else normal_price
+
+    return {
+        "storeProductId": store_product.storeProductId,
+        "storeId": store_product.storeId,
+        "storeChainId": store_product.store.chain.storeChainId if store_product.store and store_product.store.chain else None,
+        "storeChainName": store_product.store.chain.name if store_product.store and store_product.store.chain else None,
+        "storeAddress": store_product.store.address if store_product.store else None,
+        "externalSku": store_product.externalSku,
+        "externalName": store_product.externalName,
+        "externalBrand": store_product.externalBrand,
+        "price": float(normal_price) if normal_price is not None else None,
+        "hasOffer": active_offer is not None,
+        "offer": {
+            "offerId": active_offer.offerId,
+            "offerType": active_offer.offerType,
+            "offerPrice": float(active_offer.offerPrice) if active_offer.offerPrice is not None else None,
+            "currency": active_offer.currency,
+            "isActive": active_offer.isActive
+        } if active_offer else None,
+        "finalPrice": float(final_price) if final_price is not None else None,
+        "currency": (
+            active_offer.currency
+            if active_offer
+            else latest_price.currency if latest_price else None
+        ),
+        "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
+    }
+
 def compare_product_prices(product_id, chain_ids=None):
     product = db.session.get(Product, product_id)
 
@@ -67,50 +103,48 @@ def compare_product_prices(product_id, chain_ids=None):
             "message": "Producto no encontrado"
         }, 404
 
-    query = StoreProduct.query.filter(
+    query = StoreProduct.query.join(
+        Store,
+        StoreProduct.storeId == Store.storeId
+    ).filter(
         StoreProduct.productId == product_id,
         StoreProduct.isAvailable == True
     )
 
     if chain_ids:
-        query = query.join(Store, StoreProduct.storeId == Store.storeId).filter(
+        query = query.filter(
             Store.storeChainId.in_(chain_ids)
         )
 
     store_products = query.all()
 
-    items = []
+    best_item_by_chain = {}
 
     for store_product in store_products:
-        latest_price = get_latest_price(store_product.storeProductId)
-        active_offer = get_active_offer(store_product.storeProductId)
+        item = build_price_comparison_item(store_product)
 
-        normal_price = latest_price.price if latest_price else None
-        offer_price = active_offer.offerPrice if active_offer else None
+        store_chain_id = item["storeChainId"]
 
-        final_price = offer_price if offer_price is not None else normal_price
+        if store_chain_id is None:
+            continue
 
-        items.append({
-            "storeProductId": store_product.storeProductId,
-            "storeId": store_product.storeId,
-            "storeName": store_product.store.chain.name if store_product.store and store_product.store.chain else None,
-            "storeAddress": store_product.store.address if store_product.store else None,
-            "externalSku": store_product.externalSku,
-            "externalName": store_product.externalName,
-            "externalBrand": store_product.externalBrand,
-            "price": float(latest_price.price) if latest_price else None,
-            "hasOffer": active_offer is not None,
-            "offer": {
-                "offerId": active_offer.offerId,
-                "offerType": active_offer.offerType,
-                "offerPrice": float(active_offer.offerPrice) if active_offer.offerPrice is not None else None,
-                "currency": active_offer.currency,
-                "isActive": active_offer.isActive
-            } if active_offer else None,
-            "finalPrice": float(final_price) if final_price is not None else None,
-            "currency": latest_price.currency if latest_price else None,
-            "capturedAt": latest_price.capturedAt.isoformat() if latest_price and latest_price.capturedAt else None
-        })
+        current_best_item = best_item_by_chain.get(store_chain_id)
+
+        if current_best_item is None:
+            best_item_by_chain[store_chain_id] = item
+            continue
+
+        current_price = current_best_item["finalPrice"]
+        new_price = item["finalPrice"]
+
+        if current_price is None and new_price is not None:
+            best_item_by_chain[store_chain_id] = item
+            continue
+
+        if current_price is not None and new_price is not None and new_price < current_price:
+            best_item_by_chain[store_chain_id] = item
+
+    items = list(best_item_by_chain.values())
 
     items.sort(
         key=lambda item: (

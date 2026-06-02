@@ -17,42 +17,56 @@ function ProductCard({ product }) {
 
       <h3>{product.name}</h3>
 
-      {
-        product.brand && (
-          <p className="product-brand">
-            {product.brand.name}
-          </p>
-        )
-      }
+      <div className="available-stores">
+        🛒 Disponible en {product.availableStores || 0} supermercados
+      </div>
 
       {
-        product.prices && product.prices.length > 0 && (
+        product.prices && product.prices.length > 0 ? (
+
           <div className="prices-list">
+
             {
               product.prices.map((item, index) => (
+
                 <div className="price-row" key={index}>
-                  <span>{item.market}</span>
+
+                  <div className="market-info">
+                    <span>{item.market}</span>
+
+                    {
+                      item.isBestPrice && (
+                        <small>Mejor precio</small>
+                      )
+                    }
+                  </div>
+
                   <strong>{item.price}</strong>
+
                 </div>
+
               ))
             }
+
           </div>
+
+        ) : (
+
+          <div className="no-card-prices">
+            Sin precios disponibles
+          </div>
+
         )
       }
 
       {
-        product.categories && product.categories.length > 0 && (
-          <div className="product-categories">
-            {
-              product.categories.map((category) => (
-                <span key={category.categoryId}>
-                  {category.name}
-                </span>
-              ))
-            }
+        product.prices && product.prices.length > 1 && (
+          <div className="saving-box">
+            ↑ Ahorra hasta {product.saving}
           </div>
         )
       }
+
     </Link>
   )
 }
