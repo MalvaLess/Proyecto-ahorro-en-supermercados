@@ -1,163 +1,235 @@
 import './ProductDetail.css'
-import products from '../data/products'
-import { Link, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { apiRequest } from '../services/apiClient'
 
 function ProductDetail({ cart, setCart }) {
+  const { id } = useParams()
+  const location = useLocation()
 
-    const { id } = useParams()
+  const backUrl = location.state?.from || '/products'
 
-    const product = products.find(
-        item => item.slug === id
-    )
+  const [product, setProduct] = useState(null)
+  const [priceItems, setPriceItems] = useState([])
+  const [selectedPrice, setSelectedPrice] = useState(null)
 
-    const [selectedMarket, setSelectedMarket] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-    const addToCart = () => {
+  const chainIds = '1,2,3,4'
 
-        if (!selectedMarket) return
-
-        const productToAdd = {
-
-            slug: product.slug,
-
-            name: product.name,
-
-            image: product.image,
-
-            market: selectedMarket.market,
-
-            price: selectedMarket.price
-
-        }
-
-        const existingProduct = cart.find(
-            item => item.slug === product.slug
-        )
-
-        if (existingProduct) {
-
-            const updatedCart = cart.map(item =>
-
-                item.slug === product.slug
-                    ? productToAdd
-                    : item
-
-            )
-
-            setCart(updatedCart)
-
-        } else {
-
-            setCart([...cart, productToAdd])
-
-        }
+  function formatPrice(value, currency) {
+    if (value === null || value === undefined) {
+      return 'Sin precio'
     }
 
+    return new Intl.NumberFormat('es-UY', {
+      style: 'currency',
+      currency: currency || 'UYU',
+      maximumFractionDigits: 0
+    }).format(value)
+  }
+
+  async function loadProductDetail() {
+    try {
+      setLoading(true)
+      setError('')
+
+      const productResponse = await apiRequest(`/products/${id}`)
+
+      const comparisonResponse = await apiRequest(
+        `/price-comparison/products/${id}?chainIds=${chainIds}`
+      )
+
+      const productData = productResponse.data
+      const pricesData = comparisonResponse.data.items || []
+
+      setProduct(productData)
+      setPriceItems(pricesData)
+
+      if (pricesData.length > 0) {
+        setSelectedPrice(pricesData[0])
+      }
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadProductDetail()
+  }, [id])
+
+  function handleAddToCart() {
+    if (!product) return
+
+    const cartItem = {
+      cartItemId: `${product.productId}-${selectedPrice?.storeProductId || 'no-store'}-${Date.now()}`,
+      productId: product.productId,
+      name: product.name,
+      imageURL: product.imageURL,
+      brand: product.brand,
+      quantity: 1,
+      selectedStoreProductId: selectedPrice?.storeProductId || null,
+      storeChainName: selectedPrice?.storeChainName || null,
+      storeAddress: selectedPrice?.storeAddress || null,
+      unitPrice: selectedPrice?.finalPrice || 0,
+      currency: selectedPrice?.currency || 'UYU',
+      totalPrice: selectedPrice?.finalPrice || 0
+    }
+
+    setCart([...cart, cartItem])
+    setMessage('Producto agregado al carrito correctamente.')
+  }
+
+  if (loading) {
     return (
+      <section className="product-detail-page">
+        <p>Cargando producto...</p>
+      </section>
+    )
+  }
 
-        <section className="product-detail-page">
+  if (error) {
+    return (
+      <section className="product-detail-page">
+        <Link to={backUrl} className="back-link">
+          ← Volver
+        </Link>
 
-            <div className="product-detail-container">
+        <div className="product-detail-error">
+          {error}
+        </div>
+      </section>
+    )
+  }
 
-                <div className="product-left-column">
+  if (!product) {
+    return (
+      <section className="product-detail-page">
+        <Link to={backUrl} className="back-link">
+          ← Volver
+        </Link>
 
-                    <div className="back-links">
-                        <Link to={`/products/${product.category}`}>
-                            ← Volver a {product.category}
-                        </Link>
-                    </div>
+        <div className="product-detail-error">
+          Producto no encontrado.
+        </div>
+      </section>
+    )
+  }
 
-                    <div className="product-header">
+  const productImage = product.imageURL || 'https://via.placeholder.com/500x400?text=Producto'
 
+  return (
+    <section className="product-detail-page">
 
-                        <h1>{product.name}</h1>
+      <Link to={backUrl} className="back-link">
+        ← Volver a la lista
+      </Link>
 
-                        <p className="product-description">
-                            {product.description}
-                        </p>
+      <div className="product-detail-layout">
 
-                    </div>
+        <div className="product-detail-left">
 
-                    <div className="product-image-card">
+          <h1>{product.name}</h1>
 
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                        />
+          <p className="product-description">
+            {product.description || 'Producto disponible para comparar precios entre supermercados.'}
+          </p>
 
-                    </div>
+          <div className="product-image-card">
+            <img
+              src={productImage}
+              alt={product.name}
+            />
+          </div>
 
-                </div>
+        </div>
 
-                <div className="product-right-column">
+        <div className="product-detail-right">
 
-                    <div className="availability-box">
-                        🛒 Disponible en {product.prices.length} supermercados
-                    </div>
+          <div className="available-summary">
+            🛒 Disponible en {priceItems.length} supermercados
+          </div>
 
-                    <div className="markets-section">
+          <div className="stores-card">
 
-                        <div className="markets-header">
+            <h2>Selecciona el supermercado que prefieras</h2>
 
-                            <h3>Selecciona el supermercado que prefieras</h3>
+            {
+              priceItems.length > 0 ? (
 
-                            <span>
-                                
-                            </span>
+                <div className="store-price-list">
 
+                  {
+                    priceItems.map((item, index) => (
+                      <button
+                        type="button"
+                        key={item.storeProductId}
+                        className={
+                          selectedPrice?.storeProductId === item.storeProductId
+                            ? 'store-price-row selected'
+                            : 'store-price-row'
+                        }
+                        onClick={() => setSelectedPrice(item)}
+                      >
+
+                        <div className="store-info">
+                          <strong>{item.storeChainName}</strong>
+
+                          {
+                            index === 0 && (
+                              <span>Mejor precio</span>
+                            )
+                          }
+
+                          {
+                            item.hasOffer && (
+                              <small>Oferta disponible</small>
+                            )
+                          }
                         </div>
 
-                        {
-                            product.prices.map((item, index) => (
+                        <div className="store-price">
+                          {formatPrice(item.finalPrice, item.currency)}
+                        </div>
 
-                                <div
-                                    className={
-                                        selectedMarket?.market === item.market
-                                            ? 'market-card selected'
-                                            : 'market-card'
-                                    }
-                                    key={index}
-                                    onClick={() => setSelectedMarket(item)}
-                                >
-
-                                    <div className="market-left">
-
-                                        <span>{item.market}</span>
-
-                                        {
-                                            index === 0 && (
-                                                <small>
-                                                    Mejor precio
-                                                </small>
-                                            )
-                                        }
-
-                                    </div>
-
-                                    <strong>{item.price}</strong>
-
-                                </div>
-
-                            ))
-                        }
-
-                    </div>
-
-
-                    <button
-                        className="add-cart-btn"
-                        onClick={addToCart}
-                    >
-                        Agrega producto a tu lista
-                    </button>
+                      </button>
+                    ))
+                  }
 
                 </div>
 
-            </div>
+              ) : (
 
-        </section>
-    )
+                <div className="no-prices-detail">
+                  No hay precios disponibles para este producto.
+                </div>
+
+              )
+            }
+
+          </div>
+
+          {message && <p className="product-detail-success">{message}</p>}
+
+          <button
+            type="button"
+            className="add-to-cart-button"
+            onClick={handleAddToCart}
+            disabled={priceItems.length === 0}
+          >
+            Agrega producto a tu lista
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+  )
 }
 
 export default ProductDetail
