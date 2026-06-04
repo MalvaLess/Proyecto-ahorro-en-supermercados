@@ -250,6 +250,52 @@
   font-weight: 700;
 }
 
+.quantity-selector {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 18px;
+
+  background-color: white;
+
+  border-radius: 18px;
+
+  padding: 18px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+.quantity-selector button {
+  width: 42px;
+
+  height: 42px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background-color: #2e7d32;
+
+  color: white;
+
+  font-size: 22px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.quantity-selector span {
+  font-size: 22px;
+
+  font-weight: 700;
+
+  color: #1f1f1f;
+}
+
 @media (max-width: 900px) {
   .product-detail-page {
     padding: 120px 20px 40px;

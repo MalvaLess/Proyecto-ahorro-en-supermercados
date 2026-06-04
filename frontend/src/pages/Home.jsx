@@ -9,7 +9,7 @@ import HowItWorks from '../components/HowItWorks'
 function Home() {
   return (
     <div>
-        <Navbar />
+
         <Hero />
         <Features />
         <Products />

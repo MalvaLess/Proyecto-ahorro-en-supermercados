@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from models.models import db, ShoppingList
+from models.models import db, ShoppingList, ShoppingListItem
 
 
 def get_user_shopping_lists(user_id, page=1, per_page=10):
@@ -103,18 +103,15 @@ def delete_shopping_list(shopping_list_id, user_id):
         }, 404
 
     try:
+        ShoppingListItem.query.filter_by(
+            shoppingListId=shopping_list.shoppingListId
+        ).delete(synchronize_session=False)
+
         db.session.delete(shopping_list)
+
         db.session.commit()
 
         return shopping_list, None, 200
-
-    except IntegrityError as error:
-        db.session.rollback()
-
-        return None, {
-            "message": "No se puede eliminar la lista porque tiene datos asociados",
-            "details": str(error.orig)
-        }, 409
 
     except SQLAlchemyError as error:
         db.session.rollback()

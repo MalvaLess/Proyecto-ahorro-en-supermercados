@@ -30,6 +30,15 @@ function Account() {
     const [passwordError, setPasswordError] = useState("");
     const [passwordLoading, setPasswordLoading] = useState(false);
 
+    const [shoppingLists, setShoppingLists] = useState([]);
+    const [shoppingListsLoading, setShoppingListsLoading] = useState(false);
+    const [shoppingListsError, setShoppingListsError] = useState("");
+
+    const [selectedShoppingList, setSelectedShoppingList] = useState(null);
+    const [shoppingListItems, setShoppingListItems] = useState([]);
+    const [itemsLoading, setItemsLoading] = useState(false);
+    const [itemsError, setItemsError] = useState("");
+
     useEffect(() => {
         async function loadUserData() {
         try {
@@ -104,65 +113,100 @@ function Account() {
     }
 
     function handlePasswordChange(event) {
-    const { name, value } = event.target;
+        const { name, value } = event.target;
 
-    setPasswordData({
-        ...passwordData,
-        [name]: value,
-    });
+        setPasswordData({
+                ...passwordData,
+                [name]: value,
+            });
     }
 
     async function handleUpdatePassword(event) {
-    event.preventDefault();
+        event.preventDefault();
 
-    const currentUser = getCurrentUser();
+        const currentUser = getCurrentUser();
 
-    if (!currentUser || !currentUser.userId) {
-        setPasswordError("No se pudo identificar al usuario. Vuelve a iniciar sesión.");
-        return;
-    }
+        if (!currentUser || !currentUser.userId) {
+            setPasswordError("No se pudo identificar al usuario. Vuelve a iniciar sesión.");
+            return;
+        }
 
-    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-        setPasswordError("Las nuevas contraseñas no coinciden.");
-        return;
-    }
+        if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+            setPasswordError("Las nuevas contraseñas no coinciden.");
+            return;
+        }
 
-    if (passwordData.newPassword.length < 6) {
-        setPasswordError("La nueva contraseña debe tener al menos 6 caracteres.");
-        return;
-    }
+        if (passwordData.newPassword.length < 6) {
+            setPasswordError("La nueva contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
 
-    try {
-        setPasswordLoading(true);
-        setPasswordError("");
-        setPasswordMessage("");
+        try {
+            setPasswordLoading(true);
+            setPasswordError("");
+            setPasswordMessage("");
 
-        await apiRequest(`/users/${currentUser.userId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-            currentPassword: passwordData.currentPassword,
-            newPassword: passwordData.newPassword,
-        }),
-        });
+            await apiRequest(`/users/${currentUser.userId}`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                    currentPassword: passwordData.currentPassword,
+                    newPassword: passwordData.newPassword,
+                }),
+            });
 
-        setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmNewPassword: "",
-        });
+            setPasswordData({
+                currentPassword: "",
+                newPassword: "",
+                confirmNewPassword: "",
+                });
 
-        setPasswordMessage("Contraseña actualizada correctamente.");
-    } catch (error) {
-        setPasswordError(error.message);
-    } finally {
-        setPasswordLoading(false);
-    }
+            setPasswordMessage("Contraseña actualizada correctamente.");
+        } catch (error) {
+            setPasswordError(error.message);
+        } finally {
+            setPasswordLoading(false);
+        }
     }
 
     function handleLogout() {
-    logoutUser();
-    navigate("/login");
+        logoutUser();
+        navigate("/login");
     }
+
+    async function handleDeleteShoppingList(shoppingList) {
+        const confirmDelete = window.confirm(
+            `¿Seguro que quieres eliminar la lista "${shoppingList.name}"?`
+        )
+
+        if (!confirmDelete) return
+
+        try {
+            setShoppingListsError("")
+
+            await apiRequest(`/shopping-lists/${shoppingList.shoppingListId}`, {
+            method: "DELETE",
+            })
+
+            const updatedLists = shoppingLists.filter(
+            (list) => list.shoppingListId !== shoppingList.shoppingListId
+            )
+
+            setShoppingLists(updatedLists)
+
+            if (selectedShoppingList?.shoppingListId === shoppingList.shoppingListId) {
+            setSelectedShoppingList(null)
+            setShoppingListItems([])
+            }
+        } catch (error) {
+            setShoppingListsError(error.message)
+        }
+    }
+
+    useEffect(() => {
+        if (activeSection === "shoppingLists") {
+        loadShoppingLists()
+        }
+    }, [activeSection])
 
     function renderContent() {
         if (activeSection === "profile") {
@@ -270,12 +314,133 @@ function Account() {
 
         if (activeSection === "shoppingLists") {
             return (
-                <div className="account-content-card">
-                <h2>Mis compras</h2>
-                <p>Aquí mostraremos las listas de compras del usuario.</p>
-                </div>
-            );
-        }
+                    <div className="account-content-card">
+                    <div className="account-section-header">
+                        <div>
+                            <h2>Mis compras</h2>
+                            <p>Revisa tus listas de compras guardadas.</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="refresh-lists-button"
+                            onClick={loadShoppingLists}
+                            >
+                            Actualizar
+                        </button>
+                    </div>
+
+                    {shoppingListsLoading && (
+                        <p>Cargando listas de compras...</p>
+                    )}
+
+                    {shoppingListsError && (
+                        <p className="account-error">{shoppingListsError}</p>
+                    )}
+
+                    {!shoppingListsLoading && !shoppingListsError && shoppingLists.length === 0 && (
+                        <div className="empty-account-state">
+                        <h3>No tienes listas guardadas</h3>
+                        <p>Cuando guardes una lista desde el carrito, aparecerá aquí.</p>
+                        </div>
+                    )}
+
+                    {!shoppingListsLoading && shoppingLists.length > 0 && (
+                        <div className="shopping-lists-wrapper">
+                        <div className="shopping-lists-list">
+                            {shoppingLists.map((list) => (
+                            <div
+                                key={list.shoppingListId}
+                                className={
+                                selectedShoppingList?.shoppingListId === list.shoppingListId
+                                    ? "shopping-list-card selected"
+                                    : "shopping-list-card"
+                                }
+                                onClick={() => loadShoppingListItems(list)}
+                            >
+                                <div>
+                                <h3>{list.name}</h3>
+                                <p>Creada el {formatDate(list.createdAt)}</p>
+                                </div>
+
+                                <div className="shopping-list-actions">
+                                <strong>
+                                    {formatPrice(list.total)}
+                                </strong>
+
+                                <button
+                                    type="button"
+                                    className="delete-shopping-list-button"
+                                    onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleDeleteShoppingList(list)
+                                    }}
+                                >
+                                    Eliminar
+                                </button>
+                                </div>
+                            </div>
+                            ))}
+                        </div>
+
+                        <div className="shopping-list-detail">
+                            {!selectedShoppingList && (
+                            <div className="empty-account-state">
+                                <h3>Selecciona una lista</h3>
+                                <p>Haz clic en una lista para ver sus productos.</p>
+                            </div>
+                            )}
+
+                            {selectedShoppingList && (
+                            <>
+                                <h3>{selectedShoppingList.name}</h3>
+
+                                {itemsLoading && (
+                                <p>Cargando productos...</p>
+                                )}
+
+                                {itemsError && (
+                                <p className="account-error">{itemsError}</p>
+                                )}
+
+                                {!itemsLoading && shoppingListItems.length === 0 && (
+                                <p>Esta lista no tiene productos.</p>
+                                )}
+
+                                {!itemsLoading && shoppingListItems.length > 0 && (
+                                <div className="shopping-list-items">
+                                    {shoppingListItems.map((item) => (
+                                    <div
+                                        className="shopping-list-item"
+                                        key={item.shoppingListItemId}
+                                    >
+                                        <div>
+                                        <h4>{item.product?.name || "Producto sin nombre"}</h4>
+
+                                        <p>
+                                            {item.selectedStoreProduct?.store?.chain?.name || "Sin supermercado"}
+                                        </p>
+
+                                        <span>
+                                            Cantidad: {item.quantity}
+                                        </span>
+                                        </div>
+
+                                        <strong>
+                                        {formatPrice(item.totalPrice)}
+                                        </strong>
+                                    </div>
+                                    ))}
+                                </div>
+                                )}
+                            </>
+                            )}
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                );
+            }
 
         if (activeSection === "favorites") {
             return (
@@ -287,6 +452,57 @@ function Account() {
         }
 
         return null;
+    }
+
+    function formatPrice(value, currency = "UYU") {
+        return new Intl.NumberFormat("es-UY", {
+            style: "currency",
+            currency,
+            maximumFractionDigits: 0,
+        }).format(value || 0);
+    }
+
+    function formatDate(value) {
+        if (!value) return "Sin fecha";
+
+        return new Date(value).toLocaleDateString("es-UY", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    }
+
+    async function loadShoppingLists() {
+        try {
+            setShoppingListsLoading(true);
+            setShoppingListsError("");
+
+            const response = await apiRequest("/shopping-lists/");
+
+            setShoppingLists(response.data);
+        } catch (error) {
+            setShoppingListsError(error.message);
+        } finally {
+            setShoppingListsLoading(false);
+        }
+    }
+
+    async function loadShoppingListItems(shoppingList) {
+        try {
+            setSelectedShoppingList(shoppingList);
+            setItemsLoading(true);
+            setItemsError("");
+
+            const response = await apiRequest(
+            `/shopping-lists/${shoppingList.shoppingListId}/items`
+            );
+
+            setShoppingListItems(response.data);
+        } catch (error) {
+            setItemsError(error.message);
+        } finally {
+            setItemsLoading(false);
+        }
     }
 
     return (

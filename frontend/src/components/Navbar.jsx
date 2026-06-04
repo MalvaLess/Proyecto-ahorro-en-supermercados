@@ -8,6 +8,10 @@ function Navbar({ cart = [] }) {
 
   const [ loggedIn, setLoggedIn ] = useState(isAuthenticated());
 
+  const cartTotalQuantity = cart.reduce((acc, item) => {
+    return acc + (item.quantity || 1)
+  }, 0)
+
   function refreshAuthState() {
     setLoggedIn(isAuthenticated());
   }
@@ -53,10 +57,10 @@ function Navbar({ cart = [] }) {
           <FaShoppingCart />
 
           {
-            cart?.length > 0 && (
+            cartTotalQuantity > 0 && (
 
               <span className="cart-count">
-                {cart.length}
+                {cartTotalQuantity}
               </span>
 
             )

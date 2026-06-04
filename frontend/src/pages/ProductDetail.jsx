@@ -16,6 +16,7 @@ function ProductDetail({ cart, setCart }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [quantity, setQuantity] = useState(1)
 
   const chainIds = '1,2,3,4'
 
@@ -65,23 +66,65 @@ function ProductDetail({ cart, setCart }) {
   function handleAddToCart() {
     if (!product) return
 
-    const cartItem = {
-      cartItemId: `${product.productId}-${selectedPrice?.storeProductId || 'no-store'}-${Date.now()}`,
+    const selectedStoreProductId = selectedPrice?.storeProductId || null
+    const unitPrice = selectedPrice?.finalPrice || 0
+
+    const newItem = {
+      cartItemId: `${product.productId}-${selectedStoreProductId || 'no-store'}`,
       productId: product.productId,
       name: product.name,
       imageURL: product.imageURL,
       brand: product.brand,
-      quantity: 1,
-      selectedStoreProductId: selectedPrice?.storeProductId || null,
+      quantity: quantity,
+      selectedStoreProductId: selectedStoreProductId,
       storeChainName: selectedPrice?.storeChainName || null,
       storeAddress: selectedPrice?.storeAddress || null,
-      unitPrice: selectedPrice?.finalPrice || 0,
+      unitPrice: unitPrice,
       currency: selectedPrice?.currency || 'UYU',
-      totalPrice: selectedPrice?.finalPrice || 0
+      totalPrice: unitPrice * quantity
     }
 
-    setCart([...cart, cartItem])
+    setCart((prevCart) => {
+      const existingItem = prevCart.find(
+        (item) =>
+          item.productId === newItem.productId &&
+          item.selectedStoreProductId === newItem.selectedStoreProductId
+      )
+
+      if (existingItem) {
+        return prevCart.map((item) => {
+          if (
+            item.productId === newItem.productId &&
+            item.selectedStoreProductId === newItem.selectedStoreProductId
+          ) {
+            const updatedQuantity = item.quantity + quantity
+
+            return {
+              ...item,
+              quantity: updatedQuantity,
+              totalPrice: item.unitPrice * updatedQuantity
+            }
+          }
+
+          return item
+        })
+      }
+
+      return [...prevCart, newItem]
+    })
+
     setMessage('Producto agregado al carrito correctamente.')
+    setQuantity(1)
+  }
+
+  function increaseQuantity() {
+    setQuantity(quantity + 1)
+  }
+
+  function decreaseQuantity() {
+    if (quantity > 1) {
+      setQuantity(quantity - 1)
+    }
   }
 
   if (loading) {
@@ -214,6 +257,18 @@ function ProductDetail({ cart, setCart }) {
           </div>
 
           {message && <p className="product-detail-success">{message}</p>}
+
+          <div className="quantity-selector">
+            <button type="button" onClick={decreaseQuantity}>
+              -
+            </button>
+
+            <span>{quantity}</span>
+
+            <button type="button" onClick={increaseQuantity}>
+              +
+            </button>
+          </div>
 
           <button
             type="button"
