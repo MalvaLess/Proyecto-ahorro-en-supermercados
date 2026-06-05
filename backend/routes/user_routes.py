@@ -72,6 +72,14 @@ def create():
 @user_bp.route("/users/<int:user_id>", methods=["PUT"])
 @jwt_required()
 def update(user_id):
+    authenticated_user_id = int(get_jwt_identity())
+
+    if user_id != authenticated_user_id:  # verificar que el usuario solo pueda modificar su propia cuenta
+        return jsonify({
+            "success": False,
+            "message": "No tienes autorización para modificar este usuario"
+        }), 403
+
     data = request.get_json(silent=True) or {}
 
     user, error, status_code = update_user(user_id, data)
@@ -81,7 +89,7 @@ def update(user_id):
             "success": False,
             **error
         }), status_code
-    
+
     return jsonify({
         "success": True,
         "message": "Usuario actualizado correctamente",
@@ -115,6 +123,14 @@ def patch(user_id):
 @user_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @jwt_required()
 def delete(user_id):
+    authenticated_user_id = int(get_jwt_identity())
+
+    if user_id != authenticated_user_id:  # verificar que el usuario solo pueda desactivar su propia cuenta
+        return jsonify({
+            "success": False,
+            "message": "No tienes autorización para desactivar este usuario"
+        }), 403
+
     user, error, status_code = deactivate_user(user_id)
 
     if error:
@@ -122,7 +138,7 @@ def delete(user_id):
             "success": False,
             **error
         }), status_code
-    
+
     return jsonify({
         "success": True,
         "message": "Usuario desactivado correctamente"

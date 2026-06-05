@@ -16,7 +16,8 @@ class User(db.Model):
     firstName: Mapped[str] = mapped_column(String(50), nullable=False)
     lastName: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
-    passwordHash: Mapped[str] = mapped_column(String(255), nullable=False)
+    passwordHash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    googleId: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     isActive: Mapped[bool] = mapped_column(default=True)
     lastLoginAt: Mapped[datetime | None] = mapped_column(nullable=True)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
@@ -36,6 +37,8 @@ class User(db.Model):
         self.passwordHash = generate_password_hash(password)
 
     def check_password(self, password: str):
+        if self.passwordHash is None:
+            return False
         return check_password_hash(self.passwordHash, password)
 
     def deactivate(self):
@@ -276,6 +279,7 @@ class StoreProduct(db.Model):
     )  # Se agregó capacidad al string para que no se corte el nombre del producto
     externalBrand: Mapped[str] = mapped_column(String(50), nullable=True)
     isAvailable: Mapped[bool] = mapped_column(default=True)
+    soldByWeight: Mapped[bool] = mapped_column(default=False)
     createdAt: Mapped[datetime] = mapped_column(server_default=func.now())
     updatedAt: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
@@ -333,6 +337,7 @@ class StoreProduct(db.Model):
             "externalName": self.externalName,
             "externalBrand": self.externalBrand,
             "isAvailable": self.isAvailable,
+            "soldByWeight": self.soldByWeight,
             "createdAt": self.createdAt.isoformat() if self.createdAt else None,
             "updatedAt": self.updatedAt.isoformat() if self.updatedAt else None,
         }

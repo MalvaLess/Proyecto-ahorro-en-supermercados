@@ -11,8 +11,10 @@ flask-migrate = "*"
 python-dotenv = "*"
 flask-jwt-extended = "*"
 flask-cors = "*"
+flask-mail = "*"
 playwright = "*"
 requests = "*"
+google-auth = "*"
 
 [dev-packages]
 

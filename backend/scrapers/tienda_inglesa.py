@@ -118,6 +118,26 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
         try:
             page.wait_for_selector("div.card-product-container", timeout=10000)
         except Exception:
+            current_url = page.url
+            title = page.title()
+            content = page.content()
+            bot_signals = [
+                "captcha" in content.lower(),
+                "access denied" in content.lower(),
+                "challenge" in content.lower(),
+                "#challenge-form" in content.lower(),
+                "cloudflare" in content.lower(),
+                "robot" in content.lower(),
+                current_url != url,
+            ]
+            if any(bot_signals):
+                print(f"  [BOT-DETECTION] Bloqueado en {url}")
+                print(f"  URL actual: {current_url} | Título: {title}")
+            else:
+                print(f"  [DEBUG] Sin card-product-container. Título: '{title}' | URL: {current_url}")
+                has_cards = "card-product" in content.lower()
+                has_subcats = "card-category" in content.lower() or "subcategor" in content.lower()
+                print(f"  [DEBUG] card-product en HTML: {has_cards} | subcategorías: {has_subcats}")
             return []
 
         contenedores = page.query_selector_all("div.card-product-container")
@@ -173,6 +193,8 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
                     except Exception:
                         cashback = None
 
+                es_por_kg = c.query_selector("span.ProductPriceLight") is not None
+
                 resultado.append(
                     {
                         "nombre_externo": nombre,
@@ -185,6 +207,7 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
                         "ean": None,
                         "brand": None,
                         "sku": None,
+                        "es_por_kg": es_por_kg,
                     }
                 )
             except Exception:
@@ -245,7 +268,7 @@ def guardar_en_db(productos, categoria_nombre=None):
                             product = candidate
                             break
 
-            # Fallback 4: token overlap (Jaccard ≥ 0.5) dentro de misma marca
+            # Fallback 4: token overlap (Jaccard ≥ 0.6) dentro de misma marca
             if not product:
                 brand_norm = normalize_brand(p.get("brand") or "")
                 if brand_norm:
@@ -261,6 +284,24 @@ def guardar_en_db(productos, categoria_nombre=None):
                             best_score, best_candidate = score, candidate
                     if best_score >= 0.6:
                         product = best_candidate
+
+            # Fallback 5: Jaccard ≥ 0.75 sin filtro de marca (para productos sin brand extraída)
+            # Threshold más alto para evitar falsos positivos al no tener marca como restricción
+            if not product:
+                scraper_name = p["nombre_externo"]
+                candidates = Product.query.filter(
+                    Product.isActive == True
+                ).limit(500).all()
+                best_score, best_candidate = 0.0, None
+                for candidate in candidates:
+                    if not same_size(scraper_name, candidate.normalizedName):
+                        continue
+                    score = jaccard_similarity(scraper_name, candidate.normalizedName)
+                    if score > best_score:
+                        best_score, best_candidate = score, candidate
+                if best_score >= 0.75:
+                    product = best_candidate
+                    print(f"  [F5-NOBRAND] Match sin marca: '{scraper_name}' → '{best_candidate.name}' ({best_score:.2f})")
 
             # Si encontró producto CKAN sin EAN, enriquecerlo con el EAN scrapeado
             if product and p.get("ean") and not product.ean:
@@ -289,6 +330,9 @@ def guardar_en_db(productos, categoria_nombre=None):
             elif p.get("ean") and not product.ean:
                 product.ean = p["ean"]
 
+            if not product.imageURL and p["imagen"]:
+                product.imageURL = p["imagen"]
+
             store_product = StoreProduct.query.filter_by(
                 storeId=store_id, productId=product.productId
             ).first()
@@ -311,6 +355,9 @@ def guardar_en_db(productos, categoria_nombre=None):
                 if p.get("brand") and not store_product.externalBrand:
                     store_product.externalBrand = p.get("brand")
 
+            if p.get("es_por_kg"):
+                store_product.soldByWeight = True
+
             # Asignar categoría si se conoce
             if categoria_nombre:
                 categoria = Category.query.filter_by(name=categoria_nombre).first()
@@ -327,14 +374,17 @@ def guardar_en_db(productos, categoria_nombre=None):
 
             # Detectar y registrar oferta cuando hay precio de lista mayor al precio actual
             precio_lista = p.get("precio_lista")
-            if precio_lista and p["precio"] < precio_lista:
+            if not p.get("es_por_kg") and precio_lista and p["precio"] < precio_lista:
                 upsert_scraper_offer(store_product.storeProductId, p["precio"])
+                snapshot_price = precio_lista
             else:
                 deactivate_scraper_offer(store_product.storeProductId)
+                snapshot_price = p["precio"]
 
+            # PriceSnapshot guarda siempre el precio de lista (sin descuento)
             snapshot = PriceSnapshot(
                 storeProductId=store_product.storeProductId,
-                price=p["precio"],
+                price=snapshot_price,
                 currency="UYU",
                 capturedAt=datetime.now(),
                 source="SCRAPER",
@@ -391,7 +441,10 @@ if __name__ == "__main__":
                 cats = [c for c in TI_CATEGORIAS if c["nombre"] == args.categoria]
             else:
                 cats = TI_CATEGORIAS
-            for cat in cats:
+            for i, cat in enumerate(cats):
+                if i > 0:
+                    print("\nEsperando 25s entre categorías...")
+                    time.sleep(25)
                 pagina = 0
                 nombres_pagina_anterior = None
                 print(f"\n=== Categoría: {cat['nombre']} ===")

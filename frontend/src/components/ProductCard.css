@@ -188,6 +188,28 @@
   font-weight: 700;
 }
 
+.price-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.normal-price-crossed {
+  color: #9ca3af;
+  font-size: 13px;
+  text-decoration: line-through;
+}
+
+.oca-price {
+  color: #1565c0;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: rgba(21, 101, 192, 0.1);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
 .price-row strong {
   color: #2e7d32;
 

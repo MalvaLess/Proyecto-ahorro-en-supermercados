@@ -1,7 +1,8 @@
 import './Login.css'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { loginUser } from '../services/authService'
+import { GoogleLogin } from '@react-oauth/google'
+import { loginUser, googleLogin } from '../services/authService'
 
 function Login() {
 
@@ -40,7 +41,21 @@ function Login() {
     } finally {
       setLoading(false);
     }
+  }
 
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      setError("");
+      setLoading(true);
+
+      await googleLogin(credentialResponse.credential);
+
+      navigate("/")
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -84,6 +99,29 @@ function Login() {
             Crear cuenta
           </Link>
         </p>
+
+        <p className="register-link">
+          ¿Olvidaste tu contraseña?{" "}
+          <Link to="/forgot-password" className="register-link-span">
+            Recuperar contraseña
+          </Link>
+        </p>
+
+        <div className="login-divider">
+          <span>o</span>
+        </div>
+
+        <div className="google-login-wrapper">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Error al iniciar sesión con Google")}
+            width="100%"
+            theme="outline"
+            size="large"
+            text="signin_with"
+            locale="es"
+          />
+        </div>
       </form>
     </section>
   )

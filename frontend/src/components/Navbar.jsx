@@ -30,9 +30,9 @@ function Navbar({ cart = [] }) {
 
     <nav className="navbar">
 
-      <div className="logo">
+      <Link to="/" className="logo">
         SmartMarket
-      </div>
+      </Link>
 
       <div className="nav-links">
 

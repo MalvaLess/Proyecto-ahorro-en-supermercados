@@ -8,21 +8,25 @@ import { FiSearch } from 'react-icons/fi'
 import { apiRequest } from '../services/apiClient'
 
 function Products() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const categoryId = searchParams.get('categoryId')
+  const currentSearch = searchParams.get('q') || ''
+  const currentPage = parseInt(searchParams.get('page') || '1')
 
-  const [search, setSearch] = useState('')
-  const [submittedSearch, setSubmittedSearch] = useState('')
+  const [search, setSearch] = useState(currentSearch)
   const [products, setProducts] = useState([])
   const [pagination, setPagination] = useState(null)
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const perPage = 20
-  
   const chainIds = '1,2,3,4'
+
+  // Sincronizar input con URL cuando el usuario presiona atrás
+  useEffect(() => {
+    setSearch(currentSearch)
+  }, [currentSearch])
 
   function formatPrice(value, currency) {
     if (value === null || value === undefined) {
@@ -36,26 +40,16 @@ function Products() {
     }).format(value)
   }
 
-  function buildProductsEndpoint(page = 1, searchValue = submittedSearch) {
+  function buildProductsEndpoint(page, searchValue) {
     let endpoint = `/products?page=${page}&perPage=${perPage}`
 
-    if (categoryId) {
-      endpoint += `&categoryId=${categoryId}`
-    }
+    if (categoryId) endpoint += `&categoryId=${categoryId}`
 
     if (searchValue.trim() !== '') {
       endpoint += `&q=${encodeURIComponent(searchValue.trim())}`
     }
 
     return endpoint
-  }
-
-  function getEndpointFromPaginationUrl(url) {
-    if (!url) return null
-
-    const parsedUrl = new URL(url)
-
-    return parsedUrl.pathname.replace('/api', '') + parsedUrl.search
   }
 
   async function getProductWithPrices(product) {
@@ -72,7 +66,8 @@ function Products() {
         normalPrice: formatPrice(item.price, item.currency),
         hasOffer: item.hasOffer,
         isBestPrice: index === 0,
-        storeProductId: item.storeProductId
+        storeProductId: item.storeProductId,
+        ocaPrice: item.ocaPrice != null ? formatPrice(item.ocaPrice, item.currency) : null
       }))
 
       const validPrices = priceItems
@@ -106,14 +101,12 @@ function Products() {
     }
   }
 
-  async function loadProducts(endpoint = null) {
+  async function loadProducts(page, searchValue) {
     try {
       setLoading(true)
       setError('')
 
-      const requestEndpoint = endpoint || buildProductsEndpoint(1)
-
-      const response = await apiRequest(requestEndpoint)
+      const response = await apiRequest(buildProductsEndpoint(page, searchValue))
 
       const productsWithPrices = await Promise.all(
         response.data.map(product => getProductWithPrices(product))
@@ -129,46 +122,49 @@ function Products() {
   }
 
   useEffect(() => {
-    if (categoryId) {
-      setSearch('')
-      setSubmittedSearch('')
-      loadProducts(buildProductsEndpoint(1, ''))
-    }
-  }, [categoryId])
-
-  function handleSearchSubmit(event) {
-    event.preventDefault()
-
-    const cleanSearch = search.trim()
-
-    setSubmittedSearch(cleanSearch)
-
-    if (!categoryId && cleanSearch === '') {
+    if (!categoryId && currentSearch === '') {
       setProducts([])
       setPagination(null)
       return
     }
+    loadProducts(currentPage, currentSearch)
+  }, [currentPage, currentSearch, categoryId])
 
-    loadProducts(buildProductsEndpoint(1, cleanSearch))
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+    const cleanSearch = search.trim()
+
+    if (!categoryId && cleanSearch === '') {
+      setSearchParams({})
+      return
+    }
+
+    const params = {}
+    if (cleanSearch) params.q = cleanSearch
+    if (categoryId) params.categoryId = categoryId
+    params.page = '1'
+    setSearchParams(params)
   }
 
   function handlePreviousPage() {
-    if (!pagination?.previousPage) return
-
-    const endpoint = getEndpointFromPaginationUrl(pagination.previousPage)
-
-    loadProducts(endpoint)
+    if (currentPage <= 1) return
+    const params = {}
+    if (currentSearch) params.q = currentSearch
+    if (categoryId) params.categoryId = categoryId
+    params.page = String(currentPage - 1)
+    setSearchParams(params)
   }
 
   function handleNextPage() {
-    if (!pagination?.nextPage) return
-
-    const endpoint = getEndpointFromPaginationUrl(pagination.nextPage)
-
-    loadProducts(endpoint)
+    if (!pagination || currentPage >= pagination.totalPages) return
+    const params = {}
+    if (currentSearch) params.q = currentSearch
+    if (categoryId) params.categoryId = categoryId
+    params.page = String(currentPage + 1)
+    setSearchParams(params)
   }
 
-  const shouldShowResults = categoryId || submittedSearch.length > 0
+  const shouldShowResults = categoryId || currentSearch.length > 0
 
   return (
     <section className="products-page">
@@ -207,7 +203,7 @@ function Products() {
               {
                 categoryId
                   ? 'Productos de la categoría seleccionada'
-                  : `Resultados para: "${submittedSearch}"`
+                  : `Resultados para: "${currentSearch}"`
               }
             </h2>
 
@@ -308,7 +304,7 @@ function Products() {
       }
 
       {
-        !categoryId && submittedSearch.length === 0 && (
+        !categoryId && currentSearch.length === 0 && (
 
           <>
 

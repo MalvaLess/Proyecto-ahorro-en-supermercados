@@ -13,6 +13,8 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import ProtectedRoute from './components/ProtectedRoute'
 import Account from './pages/Account'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 
 
@@ -58,6 +60,10 @@ function App() {
         <Route path="/products" element={<Products />} />
 
         <Route path="/register" element={<Register />} />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route path="/product/:id" element={<ProductDetail cart={cart} setCart={setCart} />} />
 

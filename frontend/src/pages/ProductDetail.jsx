@@ -236,7 +236,17 @@ function ProductDetail({ cart, setCart }) {
                         </div>
 
                         <div className="store-price">
+                          {item.hasOffer && item.price && item.price !== item.finalPrice && (
+                            <span className="store-normal-price-crossed">
+                              {formatPrice(item.price, item.currency)}
+                            </span>
+                          )}
                           {formatPrice(item.finalPrice, item.currency)}
+                          {item.ocaPrice != null && (
+                            <span className="store-oca-price">
+                              OCA: {formatPrice(item.ocaPrice, item.currency)}
+                            </span>
+                          )}
                         </div>
 
                       </button>
