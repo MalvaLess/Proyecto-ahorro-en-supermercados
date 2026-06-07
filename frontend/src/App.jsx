@@ -15,6 +15,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Account from './pages/Account'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import Footer from './components/Footer'
+
 
 
 
@@ -77,6 +79,8 @@ function App() {
         />
 
       </Routes>
+
+      <Footer />
 
     </BrowserRouter>
   )

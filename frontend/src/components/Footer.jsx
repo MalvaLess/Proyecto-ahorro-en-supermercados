@@ -1,47 +1,22 @@
-import './Footer.css'
+import "./Footer.css";
+import logo from "../assets/logo-SM.png";
 
 function Footer() {
-    return (
-        <footer className="footer">
+  return (
+    <footer className="footer">
 
-            <div className="footer-container">
+      <img
+        src={logo}
+        alt="SmartMarket"
+        className="footer-logo"
+      />
 
-                <div className="footer-brand">
-                    <h2>Ahorro Supermercados</h2>
+      <p className="footer-copy">
+        © 2026 SmartMarket
+      </p>
 
-                    <p>
-                        Compara precios y encuentra las mejores ofertas cerca de ti.
-                    </p>
-                </div>
-
-                <div className="footer-links">
-
-                    <div>
-                        <h3>Explorar</h3>
-
-                        <ul>
-                            <li>Inicio</li>
-                            <li>Ofertas</li>
-                            <li>Categorías</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3>Compañía</h3>
-
-                        <ul>
-                            <li>Nosotros</li>
-                            <li>Contacto</li>
-                            <li>Soporte</li>
-                        </ul>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </footer>
-    )
+    </footer>
+  );
 }
 
-export default Footer
+export default Footer;

@@ -15,7 +15,7 @@ function Home() {
         <Products />
         <Categories />
         <HowItWorks />
-        <Footer/>
+     
         
     
 

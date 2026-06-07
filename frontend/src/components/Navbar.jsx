@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom'
 import { FaShoppingCart } from 'react-icons/fa'
 import { useEffect, useState } from 'react'
 import { isAuthenticated } from '../services/authService';
+import logo from '../assets/logo-SM.png'
 
 function Navbar({ cart = [] }) {
 
-  const [ loggedIn, setLoggedIn ] = useState(isAuthenticated());
+  const [loggedIn, setLoggedIn] = useState(isAuthenticated());
 
   const cartTotalQuantity = cart.reduce((acc, item) => {
     return acc + (item.quantity || 1)
@@ -21,7 +22,7 @@ function Navbar({ cart = [] }) {
 
     window.addEventListener('auth-change', refreshAuthState);
 
-    return() => {
+    return () => {
       window.removeEventListener("auth-change", refreshAuthState)
     }
   }, []);
@@ -31,7 +32,7 @@ function Navbar({ cart = [] }) {
     <nav className="navbar">
 
       <Link to="/" className="logo">
-        SmartMarket
+        <img src={logo} alt="SmartMarket" className="logo-image" />
       </Link>
 
       <div className="nav-links">
