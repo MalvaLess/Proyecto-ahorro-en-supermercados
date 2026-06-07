@@ -206,6 +206,40 @@ def deactivate_scraper_offer(store_product_id):
     return offer
 
 
+def upsert_oca_offer(store_product_id, offer_price):
+    offer = Offer.query.filter_by(
+        storeProductId=store_product_id,
+        offerType="OCA"
+    ).first()
+
+    if offer:
+        offer.offerPrice = offer_price
+        offer.isActive = True
+    else:
+        offer = Offer(
+            storeProductId=store_product_id,
+            offerType="OCA",
+            offerPrice=offer_price,
+            currency="UYU",
+            isActive=True,
+        )
+        db.session.add(offer)
+
+    return offer
+
+
+def deactivate_oca_offer(store_product_id):
+    offer = Offer.query.filter_by(
+        storeProductId=store_product_id,
+        offerType="OCA"
+    ).first()
+
+    if offer and offer.isActive:
+        offer.isActive = False
+
+    return offer
+
+
 def deactivate_offer(offer_id):
     offer = get_offer_by_id(offer_id)
 

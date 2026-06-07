@@ -12,6 +12,7 @@ load_dotenv()
 from flask import Flask, jsonify
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+from extensions import mail
 from routes.health_routes import health_bp
 from routes.user_routes import user_bp
 from routes.auth_routes import auth_bp
@@ -48,15 +49,26 @@ CORS(
 )
 
 app.config["DEBUG"] = True
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=int(os.getenv("JWT_TIME_DELTA")))
 
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 587))
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
+app.config["FRONTEND_URL"] = os.getenv("FRONTEND_URL", "http://localhost:5173")
+app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
+
 db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
+mail.init_app(app)
 
 app.register_blueprint(health_bp, url_prefix="/api/check")
 app.register_blueprint(user_bp, url_prefix="/api")

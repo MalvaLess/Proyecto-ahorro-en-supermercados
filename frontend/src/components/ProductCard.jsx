@@ -42,7 +42,15 @@ function ProductCard({ product }) {
                     }
                   </div>
 
-                  <strong>{item.price}</strong>
+                  <div className="price-value">
+                    {item.hasOffer && item.normalPrice && (
+                      <span className="normal-price-crossed">{item.normalPrice}</span>
+                    )}
+                    <strong>{item.price}</strong>
+                    {item.ocaPrice && (
+                      <span className="oca-price">OCA: {item.ocaPrice}</span>
+                    )}
+                  </div>
                 </div>
               ))
             }

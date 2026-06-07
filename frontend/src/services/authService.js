@@ -46,6 +46,38 @@ export function getCurrentUser() {
     return JSON.parse(user);
 }
 
+export async function forgotPassword(email) {
+    return await apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email })
+    });
+}
+
+export async function resetPassword(token, newPassword) {
+    return await apiRequest(`/auth/reset-password/${token}`, {
+        method: "POST",
+        body: JSON.stringify({ newPassword })
+    });
+}
+
+export async function googleLogin(token) {
+    const response = await apiRequest("/auth/google", {
+        method: "POST",
+        body: JSON.stringify({ token })
+    });
+
+    const { access_token, token_type, expiresIn, user } = response.data;
+
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("token_type", token_type);
+    localStorage.setItem("expiresIn", expiresIn);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    window.dispatchEvent(new Event("auth-change"));
+
+    return response.data;
+}
+
 export function isAuthenticated() {
   return Boolean(localStorage.getItem("access_token"));
 }
