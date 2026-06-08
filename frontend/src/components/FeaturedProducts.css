@@ -59,7 +59,7 @@
   font-weight: bold;
 }
 
-.product-card button {
+.product-card .btn-primary  {
   margin-bottom: 25px;
   padding: 12px 24px;
   border: none;
@@ -69,6 +69,22 @@
   cursor: pointer;
   font-weight: bold;
   transition: 0.3s;
+}
+
+.btn-primary {
+  margin-bottom: 25px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 30px;
+  background-color: #2e7d32;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #325e1b;
 }
 
 .product-card button:hover {

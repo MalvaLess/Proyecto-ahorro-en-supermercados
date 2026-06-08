@@ -100,7 +100,7 @@ function FeaturedProducts() {
                   </div>
 
                   <Link to={`/product/${product.productId}`}>
-                    <button>Ver oferta</button>
+                    <button className='btn-primary'>Ver oferta</button>
                   </Link>
                 </div>
 
