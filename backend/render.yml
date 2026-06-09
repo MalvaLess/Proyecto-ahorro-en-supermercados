@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: flask-app
+    evn: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
+    healthCheckPath: /
