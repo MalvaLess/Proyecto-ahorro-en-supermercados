@@ -15,6 +15,7 @@ flask-mail = "*"
 playwright = "*"
 requests = "*"
 google-auth = "*"
+gunicorn = "*"
 
 [dev-packages]
 
