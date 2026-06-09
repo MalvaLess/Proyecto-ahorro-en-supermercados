@@ -2,36 +2,23 @@ import './ProductCard.css'
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { FaHeart, FaRegHeart } from 'react-icons/fa'
+import { useFavorites } from '../context/FavoritesContext'
 
 
 function ProductCard({ product }) {
   const location = useLocation()
-  const [isFavorite, setIsFavorite] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const { favoriteIds, toggleFavorite } = useFavorites()
 
-
+  const productId = product.productId || product.id
+  const productImage = product.imageURL || product.image || 'https://via.placeholder.com/300x220?text=Producto'
+  const isFavorite = favoriteIds.has(productId)
 
   const handleFavorite = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-
-    try {
-      await apiRequest('/favorites/', {
-        method: 'POST',
-        body: JSON.stringify({
-          productId: productId
-        })
-      })
-
-      setIsFavorite(!isFavorite)
-
-    } catch (error) {
-      alert('Debes iniciar sesión')
-    }
+    await toggleFavorite(productId)
   }
-  const [fav, setFav] = useState(false);
-  const productId = product.productId || product.id
-  const productImage = product.imageURL || product.image || 'https://via.placeholder.com/300x220?text=Producto'
 
   return (
     <Link

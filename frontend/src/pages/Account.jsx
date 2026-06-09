@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./Account.css";
 import { apiRequest } from "../services/apiClient";
 import { getCurrentUser, logoutUser } from "../services/authService";
+import { useFavorites } from "../context/FavoritesContext";
 
 function Account() {
     const navigate = useNavigate();
@@ -30,9 +31,15 @@ function Account() {
     const [passwordError, setPasswordError] = useState("");
     const [passwordLoading, setPasswordLoading] = useState(false);
 
+    const { toggleFavorite } = useFavorites();
+
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListsLoading, setShoppingListsLoading] = useState(false);
     const [shoppingListsError, setShoppingListsError] = useState("");
+
+    const [favorites, setFavorites] = useState([]);
+    const [favoritesLoading, setFavoritesLoading] = useState(false);
+    const [favoritesError, setFavoritesError] = useState("");
 
     const [selectedShoppingList, setSelectedShoppingList] = useState(null);
     const [shoppingListItems, setShoppingListItems] = useState([]);
@@ -204,7 +211,10 @@ function Account() {
 
     useEffect(() => {
         if (activeSection === "shoppingLists") {
-        loadShoppingLists()
+            loadShoppingLists()
+        }
+        if (activeSection === "favorites") {
+            loadFavorites()
         }
     }, [activeSection])
 
@@ -445,8 +455,78 @@ function Account() {
         if (activeSection === "favorites") {
             return (
                 <div className="account-content-card">
-                <h2>Mis favoritos</h2>
-                <p>Aquí mostraremos los productos favoritos del usuario.</p>
+                    <div className="account-section-header">
+                        <div>
+                            <h2>Mis favoritos</h2>
+                            <p>Productos que guardaste como favoritos.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="refresh-lists-button"
+                            onClick={loadFavorites}
+                        >
+                            Actualizar
+                        </button>
+                    </div>
+
+                    {favoritesLoading && <p>Cargando favoritos...</p>}
+
+                    {favoritesError && (
+                        <p className="account-error">{favoritesError}</p>
+                    )}
+
+                    {!favoritesLoading && !favoritesError && favorites.length === 0 && (
+                        <div className="empty-account-state">
+                            <h3>No tenés favoritos guardados</h3>
+                            <p>Hacé clic en el corazón de cualquier producto para agregarlo aquí.</p>
+                        </div>
+                    )}
+
+                    {!favoritesLoading && favorites.length > 0 && (
+                        <div className="favorites-grid">
+                            {favorites.map((fav) => (
+                                <div className="favorite-card" key={fav.favoriteId}>
+                                    {fav.product?.imageURL ? (
+                                        <img
+                                            src={fav.product.imageURL}
+                                            alt={fav.product.name}
+                                            className="favorite-card-img"
+                                        />
+                                    ) : (
+                                        <div className="favorite-card-no-img">Sin imagen</div>
+                                    )}
+                                    <div className="favorite-card-body">
+                                        <h4>{fav.product?.name || "Producto sin nombre"}</h4>
+                                        {fav.product?.brand && (
+                                            <span className="favorite-card-brand">
+                                                {fav.product.brand.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="favorite-card-actions">
+                                        <Link
+                                            to={`/product/${fav.productId}`}
+                                            className="favorite-card-link"
+                                        >
+                                            Ver producto
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            className="delete-shopping-list-button"
+                                            onClick={async () => {
+                                                await toggleFavorite(fav.productId)
+                                                setFavorites(prev =>
+                                                    prev.filter(f => f.favoriteId !== fav.favoriteId)
+                                                )
+                                            }}
+                                        >
+                                            Quitar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -470,6 +550,19 @@ function Account() {
             month: "long",
             day: "numeric",
         });
+    }
+
+    async function loadFavorites() {
+        try {
+            setFavoritesLoading(true)
+            setFavoritesError("")
+            const response = await apiRequest("/favorites/")
+            setFavorites(response.data)
+        } catch (error) {
+            setFavoritesError(error.message)
+        } finally {
+            setFavoritesLoading(false)
+        }
     }
 
     async function loadShoppingLists() {

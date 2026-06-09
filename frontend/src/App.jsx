@@ -16,6 +16,7 @@ import Account from './pages/Account'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Footer from './components/Footer'
+import { FavoritesProvider } from './context/FavoritesContext'
 
 
 
@@ -43,6 +44,7 @@ function App() {
   return (
 
     <BrowserRouter>
+    <FavoritesProvider>
 
       <Navbar cart={cart} />
 
@@ -82,6 +84,7 @@ function App() {
 
       <Footer />
 
+    </FavoritesProvider>
     </BrowserRouter>
   )
 }
