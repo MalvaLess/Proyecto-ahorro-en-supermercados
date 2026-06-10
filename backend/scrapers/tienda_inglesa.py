@@ -466,7 +466,7 @@ if __name__ == "__main__":
                     print("\nEsperando 25s entre categorías...")
                     time.sleep(25)
                 pagina = 0
-                nombres_pagina_anterior = None
+                todos_los_nombres = set()
                 print(f"\n=== Categoría: {cat['nombre']} ===")
                 while pagina < MAX_PAGINAS:
                     print(f"Scrapeando '{cat['nombre']}' página {pagina}...")
@@ -476,15 +476,14 @@ if __name__ == "__main__":
                         break
 
                     nombres_actuales = {prod["nombre_externo"] for prod in productos}
-                    if nombres_pagina_anterior is not None:
-                        if nombres_actuales == nombres_pagina_anterior:
-                            print("Mismos productos que página anterior. Fin de paginación.")
-                            break
-                        overlap = len(nombres_actuales & nombres_pagina_anterior)
-                        if overlap / max(len(nombres_actuales), 1) >= 0.8:
-                            print(f"Paginación terminada (solapamiento {overlap}/{len(nombres_actuales)}).")
-                            break
-                    nombres_pagina_anterior = nombres_actuales
+
+                    # Productos genuinamente nuevos (no vistos en ninguna página anterior)
+                    nuevos = nombres_actuales - todos_los_nombres
+                    if pagina > 0 and len(nuevos) < 5:
+                        print(f"Paginación terminada ({len(nuevos)} productos nuevos en página {pagina}).")
+                        break
+
+                    todos_los_nombres |= nombres_actuales
 
                     eans_db = obtener_eans_existentes(
                         [p["nombre_externo"] for p in productos]
