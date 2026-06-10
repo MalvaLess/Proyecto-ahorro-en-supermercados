@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './Hero.css'
 import heroImage from '../assets/ChatGPT Image 9 may 2026, 22_42_52.png'
 
@@ -21,7 +22,7 @@ function Hero() {
                         Encuentra las mejores ofertas y administra <br />mejor tus compras.
                     </p>
 
-                    <button>Comenzar</button>
+                    <Link to="/products"><button>Comenzar</button></Link>
                 </div>
 
 

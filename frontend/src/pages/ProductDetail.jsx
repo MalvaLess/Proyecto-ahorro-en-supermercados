@@ -37,11 +37,10 @@ function ProductDetail({ cart, setCart }) {
       setLoading(true)
       setError('')
 
-      const productResponse = await apiRequest(`/products/${id}`)
-
-      const comparisonResponse = await apiRequest(
-        `/price-comparison/products/${id}?chainIds=${chainIds}`
-      )
+      const [productResponse, comparisonResponse] = await Promise.all([
+        apiRequest(`/products/${id}`),
+        apiRequest(`/price-comparison/products/${id}?storeChainIds=${chainIds}`)
+      ])
 
       const productData = productResponse.data
       const pricesData = comparisonResponse.data.items || []
