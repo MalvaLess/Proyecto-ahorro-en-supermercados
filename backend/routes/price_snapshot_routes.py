@@ -73,6 +73,7 @@ def find_latest_price_by_store_product(store_product_id):
 
 
 @price_snapshot_bp.route("/", methods=["POST"])
+@jwt_required()
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -92,6 +93,7 @@ def create():
 
 
 @price_snapshot_bp.route("/<int:price_snapshot_id>", methods=["DELETE"])
+@jwt_required()
 def delete(price_snapshot_id):
     price_snapshot, error, status_code = delete_price_snapshot(price_snapshot_id)
 

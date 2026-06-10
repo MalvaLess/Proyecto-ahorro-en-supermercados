@@ -55,6 +55,7 @@ def find_store(store_id):
 
 
 @store_bp.route("/", methods=["POST"])
+@jwt_required()
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -74,6 +75,7 @@ def create():
 
 
 @store_bp.route("/<int:store_id>", methods=["PUT"])
+@jwt_required()
 def update(store_id):
     data = request.get_json(silent=True) or {}
 
@@ -93,6 +95,7 @@ def update(store_id):
 
 
 @store_bp.route("/<int:store_id>", methods=["DELETE"])
+@jwt_required()
 def delete(store_id):
     store, error, status_code = deactivate_store(store_id)
 

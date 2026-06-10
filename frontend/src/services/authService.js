@@ -79,5 +79,18 @@ export async function googleLogin(token) {
 }
 
 export function isAuthenticated() {
-  return Boolean(localStorage.getItem("access_token"));
+  const token = localStorage.getItem("access_token");
+  if (!token) return false;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (payload.exp * 1000 < Date.now()) {
+      logoutUser();
+      return false;
+    }
+    return true;
+  } catch {
+    logoutUser();
+    return false;
+  }
 }

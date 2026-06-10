@@ -51,6 +51,7 @@ def find_brand(brand_id):
 
 
 @brand_bp.route("/", methods=["POST"])
+@jwt_required()
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -70,6 +71,7 @@ def create():
  
 
 @brand_bp.route("/<int:brand_id>", methods=["PUT"])
+@jwt_required()
 def update(brand_id):
     data = request.get_json(silent=True) or {}
 
@@ -89,6 +91,7 @@ def update(brand_id):
 
 
 @brand_bp.route("/<int:brand_id>", methods=["DELETE"])
+@jwt_required()
 def delete(brand_id):
     brand, error, status_code = delete_brand(brand_id)
 

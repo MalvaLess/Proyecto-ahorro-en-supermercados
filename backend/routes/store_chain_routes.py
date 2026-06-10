@@ -55,6 +55,7 @@ def find_store_chain(store_chain_id):
 
 
 @store_chain_bp.route("/", methods=["POST"])
+@jwt_required()
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -74,6 +75,7 @@ def create():
 
 
 @store_chain_bp.route("/<int:store_chain_id>", methods=["PUT"])
+@jwt_required()
 def update(store_chain_id):
     data = request.get_json(silent=True) or {}
 
@@ -96,6 +98,7 @@ def update(store_chain_id):
 
 
 @store_chain_bp.route("/<int:store_chain_id>", methods=["DELETE"])
+@jwt_required()
 def delete(store_chain_id):
     store_chain, error, status_code = deactivate_store_chain(store_chain_id)
 

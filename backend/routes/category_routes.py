@@ -51,6 +51,7 @@ def find_category(category_id):
 
 
 @category_bp.route("/", methods=["POST"])
+@jwt_required()
 def create():
     data = request.get_json(silent=True) or {}
 
@@ -70,6 +71,7 @@ def create():
  
 
 @category_bp.route("/<int:category_id>", methods=["PUT"])
+@jwt_required()
 def update(category_id):
     data = request.get_json(silent=True) or {}
 
@@ -89,6 +91,7 @@ def update(category_id):
 
 
 @category_bp.route("/<int:category_id>", methods=["DELETE"])
+@jwt_required()
 def delete(category_id):
     category, error, status_code = delete_category(category_id)
 
