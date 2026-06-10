@@ -243,6 +243,118 @@ def get_top_discounts(limit=10):
     return sorted_results[:limit]
 
 
+def get_prices_bulk(product_ids, chain_ids=None):
+    from sqlalchemy.orm import joinedload
+
+    if not product_ids:
+        return {}
+
+    store_products = (
+        StoreProduct.query
+        .options(joinedload(StoreProduct.store).joinedload(Store.chain))
+        .filter(
+            StoreProduct.productId.in_(product_ids),
+            StoreProduct.isAvailable == True,
+        )
+        .all()
+    )
+
+    sp_ids = [sp.storeProductId for sp in store_products]
+    if not sp_ids:
+        return {pid: [] for pid in product_ids}
+
+    latest_subq = (
+        db.session.query(
+            PriceSnapshot.storeProductId,
+            func.max(PriceSnapshot.priceSnapshotId).label("max_id")
+        )
+        .filter(PriceSnapshot.storeProductId.in_(sp_ids))
+        .group_by(PriceSnapshot.storeProductId)
+        .subquery()
+    )
+    latest_prices = {
+        ps.storeProductId: ps
+        for ps in db.session.query(PriceSnapshot)
+        .join(latest_subq, PriceSnapshot.priceSnapshotId == latest_subq.c.max_id)
+        .all()
+    }
+
+    active_offers = {}
+    for offer in (
+        Offer.query
+        .filter(Offer.storeProductId.in_(sp_ids), Offer.isActive == True, Offer.offerType.in_(["NORMAL", "WEEKLY_DAY"]))
+        .order_by(Offer.offerId.desc())
+        .all()
+    ):
+        active_offers.setdefault(offer.storeProductId, offer)
+
+    oca_offers = {}
+    for offer in (
+        Offer.query
+        .filter(Offer.storeProductId.in_(sp_ids), Offer.isActive == True, Offer.offerType == "OCA")
+        .order_by(Offer.offerId.desc())
+        .all()
+    ):
+        oca_offers.setdefault(offer.storeProductId, offer)
+
+    by_product = {}
+    for sp in store_products:
+        by_product.setdefault(sp.productId, []).append(sp)
+
+    result = {}
+    for pid in product_ids:
+        items = []
+        for sp in by_product.get(pid, []):
+            chain = sp.store.chain if sp.store else None
+            if chain_ids and (chain is None or chain.storeChainId not in chain_ids):
+                continue
+
+            latest_price = latest_prices.get(sp.storeProductId)
+            active_offer = active_offers.get(sp.storeProductId)
+            oca_offer = oca_offers.get(sp.storeProductId)
+
+            normal_price = latest_price.price if latest_price else None
+            offer_price = active_offer.offerPrice if active_offer else None
+            oca_price = oca_offer.offerPrice if oca_offer else None
+            final_price = offer_price if offer_price is not None else normal_price
+
+            items.append({
+                "storeProductId": sp.storeProductId,
+                "storeChainId": chain.storeChainId if chain else None,
+                "storeChainName": chain.name if chain else None,
+                "price": float(normal_price) if normal_price is not None else None,
+                "finalPrice": float(final_price) if final_price is not None else None,
+                "hasOffer": active_offer is not None,
+                "ocaPrice": float(oca_price) if oca_price is not None else None,
+                "currency": (
+                    active_offer.currency if active_offer
+                    else latest_price.currency if latest_price else None
+                ),
+            })
+
+        best_by_chain = {}
+        for item in items:
+            chain_id = item["storeChainId"]
+            if chain_id is None:
+                continue
+            current = best_by_chain.get(chain_id)
+            if current is None:
+                best_by_chain[chain_id] = item
+            elif (
+                (current["finalPrice"] is None and item["finalPrice"] is not None) or
+                (current["finalPrice"] is not None and item["finalPrice"] is not None
+                 and item["finalPrice"] < current["finalPrice"])
+            ):
+                best_by_chain[chain_id] = item
+
+        result[pid] = sorted(
+            best_by_chain.values(),
+            key=lambda x: (x["finalPrice"] is None, x["finalPrice"] or 0)
+        )
+
+    return result
+
+
 def get_offers_paginated(page=1, per_page=40):
     from sqlalchemy.orm import joinedload
 

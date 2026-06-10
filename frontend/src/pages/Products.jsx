@@ -21,7 +21,6 @@ function Products() {
   const [error, setError] = useState('')
 
   const perPage = 20
-  const chainIds = '1,2,3,4'
 
   // Sincronizar input con URL cuando el usuario presiona atrás
   useEffect(() => {
@@ -52,52 +51,33 @@ function Products() {
     return endpoint
   }
 
-  async function getProductWithPrices(product) {
-    try {
-      const response = await apiRequest(
-        `/price-comparison/products/${product.productId}?chainIds=${chainIds}`
-      )
+  function buildProductFromBulk(product, items) {
+    const prices = items.map((item, index) => ({
+      market: item.storeChainName,
+      price: formatPrice(item.finalPrice, item.currency),
+      normalPrice: formatPrice(item.price, item.currency),
+      hasOffer: item.hasOffer,
+      isBestPrice: index === 0,
+      storeProductId: item.storeProductId,
+      ocaPrice: item.ocaPrice != null ? formatPrice(item.ocaPrice, item.currency) : null
+    }))
 
-      const priceItems = response.data.items || []
+    const validPrices = items
+      .filter(item => item.finalPrice !== null && item.finalPrice !== undefined)
+      .map(item => item.finalPrice)
 
-      const prices = priceItems.map((item, index) => ({
-        market: item.storeChainName,
-        price: formatPrice(item.finalPrice, item.currency),
-        normalPrice: formatPrice(item.price, item.currency),
-        hasOffer: item.hasOffer,
-        isBestPrice: index === 0,
-        storeProductId: item.storeProductId,
-        ocaPrice: item.ocaPrice != null ? formatPrice(item.ocaPrice, item.currency) : null
-      }))
+    const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : null
+    const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null
+    const saving = maxPrice && minPrice ? maxPrice - minPrice : 0
 
-      const validPrices = priceItems
-        .filter(item => item.finalPrice !== null && item.finalPrice !== undefined)
-        .map(item => item.finalPrice)
-
-      const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : null
-      const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null
-
-      const saving = maxPrice && minPrice ? maxPrice - minPrice : 0
-
-      return {
-        ...product,
-        id: product.productId,
-        slug: product.productId,
-        image: product.imageURL || 'https://via.placeholder.com/300x220?text=Producto',
-        prices,
-        availableStores: prices.length,
-        saving: formatPrice(saving, priceItems[0]?.currency || 'UYU')
-      }
-    } catch (error) {
-      return {
-        ...product,
-        id: product.productId,
-        slug: product.productId,
-        image: product.imageURL || 'https://via.placeholder.com/300x220?text=Producto',
-        prices: [],
-        availableStores: 0,
-        saving: formatPrice(0, 'UYU')
-      }
+    return {
+      ...product,
+      id: product.productId,
+      slug: product.productId,
+      image: product.imageURL || 'https://via.placeholder.com/300x220?text=Producto',
+      prices,
+      availableStores: prices.length,
+      saving: formatPrice(saving, items[0]?.currency || 'UYU')
     }
   }
 
@@ -107,10 +87,22 @@ function Products() {
       setError('')
 
       const response = await apiRequest(buildProductsEndpoint(page, searchValue))
+      const rawProducts = response.data
 
-      const productsWithPrices = await Promise.all(
-        response.data.map(product => getProductWithPrices(product))
-      )
+      if (rawProducts.length === 0) {
+        setProducts([])
+        setPagination(response.pagination)
+        return
+      }
+
+      const productIds = rawProducts.map(p => p.productId).join(',')
+      const bulkResponse = await apiRequest(`/price-comparison/bulk?productIds=${productIds}`)
+      const pricesByProduct = bulkResponse.data
+
+      const productsWithPrices = rawProducts.map(product => {
+        const items = pricesByProduct[String(product.productId)] || []
+        return buildProductFromBulk(product, items)
+      })
 
       setProducts(productsWithPrices)
       setPagination(response.pagination)

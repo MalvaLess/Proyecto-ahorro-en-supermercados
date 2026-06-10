@@ -460,14 +460,15 @@ if __name__ == "__main__":
                 cats = [c for c in TI_CATEGORIAS if c["nombre"] == args.categoria]
             else:
                 cats = TI_CATEGORIAS
-            for i, cat in enumerate(cats):
-                if i > 0:
+            MAX_PAGINAS = 60
+            for idx_cat, cat in enumerate(cats):
+                if idx_cat > 0:
                     print("\nEsperando 25s entre categorías...")
                     time.sleep(25)
                 pagina = 0
                 nombres_pagina_anterior = None
                 print(f"\n=== Categoría: {cat['nombre']} ===")
-                while True:
+                while pagina < MAX_PAGINAS:
                     print(f"Scrapeando '{cat['nombre']}' página {pagina}...")
                     productos = scrape_pagina(page, cat["url"], pagina)
                     if not productos:
@@ -475,9 +476,14 @@ if __name__ == "__main__":
                         break
 
                     nombres_actuales = {prod["nombre_externo"] for prod in productos}
-                    if nombres_actuales == nombres_pagina_anterior:
-                        print("Mismos productos que página anterior. Fin de paginación.")
-                        break
+                    if nombres_pagina_anterior is not None:
+                        if nombres_actuales == nombres_pagina_anterior:
+                            print("Mismos productos que página anterior. Fin de paginación.")
+                            break
+                        overlap = len(nombres_actuales & nombres_pagina_anterior)
+                        if overlap / max(len(nombres_actuales), 1) >= 0.8:
+                            print(f"Paginación terminada (solapamiento {overlap}/{len(nombres_actuales)}).")
+                            break
                     nombres_pagina_anterior = nombres_actuales
 
                     eans_db = obtener_eans_existentes(
@@ -489,9 +495,9 @@ if __name__ == "__main__":
                             prod["ean"] = cached
 
                     total = len(productos)
-                    for i, prod in enumerate(productos, 1):
+                    for idx_prod, prod in enumerate(productos, 1):
                         if prod.get("ean"):
-                            print(f"  ✓ {i}/{total}: {prod['nombre_externo'][:45]} (DB)")
+                            print(f"  ✓ {idx_prod}/{total}: {prod['nombre_externo'][:45]} (DB)")
                         else:
                             if prod.get("product_url"):
                                 datos = extraer_datos_producto(page, prod["product_url"])
@@ -499,9 +505,9 @@ if __name__ == "__main__":
                                 prod["brand"] = datos["brand"]
                                 prod["sku"] = datos["sku"]
                             if prod.get("ean"):
-                                print(f"  ✓ {i}/{total}: {prod['nombre_externo'][:50]} → {prod['ean']}")
+                                print(f"  ✓ {idx_prod}/{total}: {prod['nombre_externo'][:50]} → {prod['ean']}")
                             else:
-                                print(f"  ✗ {i}/{total}: {prod['nombre_externo'][:55]}")
+                                print(f"  ✗ {idx_prod}/{total}: {prod['nombre_externo'][:55]}")
                             time.sleep(0.05)
 
                     guardar_en_db(productos, cat["nombre"])

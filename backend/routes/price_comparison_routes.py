@@ -4,7 +4,8 @@ from services.price_comparison_service import (
     parse_chain_ids,
     compare_product_prices,
     get_top_discounts,
-    get_offers_paginated
+    get_offers_paginated,
+    get_prices_bulk,
 )
 
 price_comparison_bp = Blueprint("price_comparison", __name__)
@@ -35,6 +36,29 @@ def offers_paginated():
         "success": True,
         **result
     }), 200
+
+
+@price_comparison_bp.route("/bulk", methods=["GET"])
+def compare_prices_bulk():
+    product_ids_raw = request.args.get("productIds", "")
+    if not product_ids_raw:
+        return jsonify({"success": False, "message": "productIds requerido"}), 400
+
+    try:
+        product_ids = [int(x.strip()) for x in product_ids_raw.split(",") if x.strip()]
+    except ValueError:
+        return jsonify({"success": False, "message": "productIds debe ser lista de números separados por coma"}), 400
+
+    product_ids = product_ids[:100]
+
+    chain_ids_raw = request.args.get("storeChainIds")
+    chain_ids, parse_error = parse_chain_ids(chain_ids_raw)
+    if parse_error:
+        return jsonify({"success": False, **parse_error}), 400
+
+    result = get_prices_bulk(product_ids, chain_ids)
+
+    return jsonify({"success": True, "data": result}), 200
 
 
 @price_comparison_bp.route("/products/<int:product_id>", methods=["GET"])
