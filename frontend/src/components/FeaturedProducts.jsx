@@ -2,6 +2,8 @@ import './FeaturedProducts.css'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiRequest } from '../services/apiClient'
+import { FaHeart, FaRegHeart } from 'react-icons/fa'
+import { useFavorites } from '../context/FavoritesContext'
 
 let _cache = null
 let _cacheTs = 0
@@ -13,6 +15,8 @@ function FeaturedProducts() {
   const [loading, setLoading] = useState(true)
   const [startIndex, setStartIndex] = useState(0)
   const [animClass, setAnimClass] = useState('')
+  const [hoveredId, setHoveredId] = useState(null)
+  const { favoriteIds, toggleFavorite } = useFavorites()
 
   useEffect(() => {
     const now = Date.now()
@@ -77,6 +81,17 @@ function FeaturedProducts() {
           <div className={`products-featured-grid ${animClass}`}>
             {visible.map((product) => (
               <div className="product-card" key={`${product.productId}-${startIndex}`}>
+
+                <button
+                  className="favorite-btn"
+                  onClick={() => toggleFavorite(product.productId)}
+                  onMouseEnter={() => setHoveredId(product.productId)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  {(favoriteIds.has(product.productId) || hoveredId === product.productId)
+                    ? <FaHeart />
+                    : <FaRegHeart />}
+                </button>
 
                 {product.discountPct > 0 && (
                   <div className="discount-badge">-{product.discountPct}%</div>

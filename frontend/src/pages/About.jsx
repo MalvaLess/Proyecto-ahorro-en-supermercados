@@ -1,12 +1,16 @@
 import './About.css'
 import {
     FaReact,
-    FaDocker
+    FaDocker,
+    FaCss3Alt
 } from 'react-icons/fa'
 
 import {
     SiFlask,
-    SiPostgresql
+    SiPostgresql,
+    SiPython,
+    SiHtml5,
+    SiJavascript
 } from 'react-icons/si'
 
 function About() {
@@ -100,6 +104,26 @@ function About() {
                         <span>Docker</span>
                     </div>
 
+                    <div className="tech-card">
+                        <SiPython className="tech-icon python" />
+                        <span>Python</span>
+                    </div>
+
+                    <div className="tech-card">
+                        <SiHtml5 className="tech-icon html" />
+                        <span>HTML</span>
+                    </div>
+
+                    <div className="tech-card">
+                        <FaCss3Alt className="tech-icon css" />
+                        <span>CSS</span>
+                    </div>
+
+                    <div className="tech-card">
+                        <SiJavascript className="tech-icon javascript" />
+                        <span>JavaScript</span>
+                    </div>
+
                 </div>
 
             </div>
@@ -111,7 +135,7 @@ function About() {
                             👨‍💻
                         </div>
 
-                        <h3>Tu Nombre</h3>
+                        <h3>Juan David</h3>
 
                         <span>
                             Frontend Developer
