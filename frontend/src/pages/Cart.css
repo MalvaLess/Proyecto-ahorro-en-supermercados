@@ -296,6 +296,12 @@
 
 /* RESPONSIVE */
 
+@media (max-width: 1024px) {
+  .cart-page {
+    padding: 140px 30px 80px;
+  }
+}
+
 @media (max-width: 1000px) {
   .cart-layout {
     grid-template-columns: 1fr;

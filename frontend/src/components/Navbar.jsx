@@ -8,6 +8,7 @@ import logo from '../assets/logo-SM.png'
 function Navbar({ cart = [] }) {
 
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const cartTotalQuantity = cart.reduce((acc, item) => {
     return acc + (item.quantity || 1)
@@ -27,33 +28,47 @@ function Navbar({ cart = [] }) {
     }
   }, []);
 
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
 
     <nav className="navbar">
 
-      <Link to="/" className="logo">
+      <Link to="/" className="logo" onClick={closeMenu}>
         <img src={logo} alt="SmartMarket" className="logo-image" />
       </Link>
 
-      <div className="nav-links">
+      <button
+        className="hamburger"
+        onClick={() => setMenuOpen(prev => !prev)}
+        aria-label="Menú"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
 
-        <Link to="/">Inicio</Link>
+      <div className={`nav-links${menuOpen ? ' open' : ''}`}>
 
-        <Link to="/products">Productos</Link>
+        <Link to="/" onClick={closeMenu}>Inicio</Link>
 
-        <Link to="/offers">Ofertas</Link>
+        <Link to="/products" onClick={closeMenu}>Productos</Link>
 
-        <Link to="/about">Nosotros</Link>
+        <Link to="/offers" onClick={closeMenu}>Ofertas</Link>
+
+        <Link to="/about" onClick={closeMenu}>Nosotros</Link>
 
         {
           loggedIn ? (
-            <Link to="/account">Mi Cuenta</Link>
+            <Link to="/account" onClick={closeMenu}>Mi Cuenta</Link>
           ) : (
-            <Link to="/login">Login</Link>
+            <Link to="/login" onClick={closeMenu}>Login</Link>
           )
         }
 
-        <Link to="/cart" className="cart-icon">
+        <Link to="/cart" className="cart-icon" onClick={closeMenu}>
 
           <FaShoppingCart />
 

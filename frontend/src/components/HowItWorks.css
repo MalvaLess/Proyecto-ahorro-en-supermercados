@@ -71,3 +71,39 @@
   background-color: #c8e6c9;
   z-index: 1;
 }
+
+@media (max-width: 1024px) {
+  .how {
+    padding: 40px 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .how {
+    padding: 40px 20px;
+    margin-bottom: 60px;
+  }
+
+  .how-header h2 {
+    font-size: 34px;
+  }
+
+  .how-header p {
+    font-size: 17px;
+  }
+
+  .how-steps {
+    flex-direction: column;
+    align-items: center;
+    gap: 50px;
+  }
+
+  .step-card {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .how-steps::before {
+    display: none;
+  }
+}

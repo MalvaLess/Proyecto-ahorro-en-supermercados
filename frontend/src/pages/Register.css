@@ -105,3 +105,13 @@
 .register-form button:hover {
   background-color: #256428;
 }
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 36px 24px;
+  }
+
+  .register-container h1 {
+    font-size: 32px;
+  }
+}

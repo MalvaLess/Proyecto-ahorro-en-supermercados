@@ -241,28 +241,47 @@
 }
 
 
-@media (max-width: 1000px) {
-
+@media (max-width: 1024px) {
     .about-page {
+        padding: 100px 40px;
+    }
+}
 
-        padding: 80px 25px;
+@media (max-width: 768px) {
+    .about-page {
+        padding: 90px 20px 60px;
     }
 
     .stats-grid,
     .tech-grid,
     .team-grid,
     .mission-section {
-
         grid-template-columns: 1fr;
     }
 
     .about-hero h1 {
+        font-size: 36px;
+    }
 
-        font-size: 48px;
+    .about-hero p {
+        font-size: 17px;
+    }
+
+    .technologies-section h2,
+    .team-section h2 {
+        font-size: 30px;
+    }
+
+    .mission-left h2 {
+        font-size: 30px;
+    }
+
+    .about-footer {
+        padding: 40px 24px;
+        border-radius: 24px;
     }
 
     .about-footer h2 {
-
-        font-size: 28px;
+        font-size: 22px;
     }
 }

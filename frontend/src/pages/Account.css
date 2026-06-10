@@ -437,6 +437,12 @@
   color: #b71c1c;
 }
 
+@media (max-width: 1024px) {
+  .account-page {
+    padding: 120px 40px;
+  }
+}
+
 @media (max-width: 900px) {
   .shopping-lists-wrapper {
     grid-template-columns: 1fr;
@@ -448,24 +454,21 @@
 
   .account-page {
     grid-template-columns: 1fr;
-
-    padding: 120px 20px;
+    padding: 110px 20px 60px;
   }
 
   .account-sidebar {
     display: flex;
-
     flex-direction: column;
   }
 
   .account-content-card {
     max-width: 100%;
-
-    padding: 40px 28px;
+    padding: 30px 20px;
   }
 
   .account-content-card h2 {
-    font-size: 32px;
+    font-size: 28px;
   }
 }
 

@@ -215,3 +215,36 @@
 
   color: white;
 }
+
+@media (max-width: 1024px) {
+  .products-page {
+    padding-top: 120px;
+    padding-bottom: 80px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-page {
+    padding: 100px 16px 60px;
+  }
+
+  .products-header h1 {
+    font-size: 32px;
+  }
+
+  .products-description {
+    font-size: 18px;
+  }
+
+  .search-results {
+    padding: 30px 20px;
+    margin: 30px 0 50px;
+    border-radius: 24px;
+  }
+
+  .search-box input {
+    font-size: 16px;
+  }
+}

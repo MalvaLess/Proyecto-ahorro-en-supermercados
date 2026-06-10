@@ -1,3 +1,7 @@
+.hamburger {
+  display: none;
+}
+
 .navbar {
   width: 100%;
   padding: 10px 100px;
@@ -70,4 +74,67 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 10px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 20px;
+  }
+
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 1001;
+  }
+
+  .hamburger span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background-color: #1f1f1f;
+    border-radius: 2px;
+    transition: 0.3s;
+  }
+
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    background: white;
+    padding: 10px 0 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    z-index: 999;
+    gap: 0;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links a {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 18px;
+  }
+
+  .cart-icon {
+    padding: 16px 24px;
+    justify-content: flex-start;
+    border-bottom: none !important;
+  }
 }

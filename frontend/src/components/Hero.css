@@ -53,6 +53,48 @@
 .hero-image img {
     width: 500px;
     border-radius: 24px;
+}
 
+@media (max-width: 1024px) {
+    .hero {
+        padding: 40px;
+    }
 
+    .hero-container {
+        padding: 60px 40px;
+    }
+
+    .hero-image img {
+        width: 380px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 20px 16px;
+    }
+
+    .hero-container {
+        flex-direction: column;
+        padding: 40px 16px;
+        gap: 30px;
+        text-align: center;
+    }
+
+    .hero-text {
+        max-width: 100%;
+    }
+
+    .hero-text h1 {
+        font-size: 30px;
+    }
+
+    .hero-text p {
+        font-size: 18px;
+    }
+
+    .hero-image img {
+        width: 100%;
+        max-width: 360px;
+    }
 }

@@ -1,5 +1,5 @@
 .products-category-page {
-  padding: 140px 250px;
+  padding: 140px 80px;
   min-height: 100vh;
   background-color: #f7f7f7;
 }
@@ -41,13 +41,8 @@
 }
 
 .products-category-grid {
-
   display: grid;
-
-  grid-template-columns: repeat(3, 280px);
-
-  justify-content: center;
-
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 35px;
 }
 
@@ -69,5 +64,25 @@
 
 .back-links a:hover {
   color: #256428;
+}
+
+@media (max-width: 1024px) {
+  .products-category-page {
+    padding: 140px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-category-page {
+    padding: 110px 16px 60px;
+  }
+
+  .category-header h1 {
+    font-size: 36px;
+  }
+
+  .category-header p {
+    font-size: 17px;
+  }
 }
 

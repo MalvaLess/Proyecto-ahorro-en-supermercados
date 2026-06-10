@@ -55,3 +55,27 @@
   font-size: 20px;
   font-weight: 600;
 }
+
+@media (max-width: 768px) {
+  .categories-section h2 {
+    font-size: 30px;
+  }
+
+  .categories-section p {
+    font-size: 17px;
+  }
+
+  .category-card {
+    width: 140px;
+    height: 140px;
+  }
+
+  .category-icon {
+    font-size: 38px;
+    margin-bottom: 12px;
+  }
+
+  .category-card h3 {
+    font-size: 16px;
+  }
+}
