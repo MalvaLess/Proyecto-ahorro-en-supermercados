@@ -188,10 +188,10 @@ class Product(db.Model):
         server_default=func.now(), onupdate=func.now()
     )
 
-    brand: Mapped["Brand"] = relationship("Brand", back_populates="products")
+    brand: Mapped["Brand"] = relationship("Brand", back_populates="products", lazy="joined")
 
     categories: Mapped[list["ProductCategory"]] = relationship(
-        "ProductCategory", back_populates="product"
+        "ProductCategory", back_populates="product", lazy="selectin"
     )
 
     stores: Mapped[list["StoreProduct"]] = relationship(
@@ -247,7 +247,7 @@ class ProductCategory(db.Model):
     product: Mapped["Product"] = relationship("Product", back_populates="categories")
 
     category: Mapped["Category"] = relationship(
-        "Category", back_populates="productCategories"
+        "Category", back_populates="productCategories", lazy="joined"
     )
 
     __table_args__ = (
@@ -572,11 +572,11 @@ class ShoppingListItem(db.Model):
     )
 
     product: Mapped["Product"] = relationship(
-        "Product", back_populates="shoppingListItems"
+        "Product", back_populates="shoppingListItems", lazy="selectin"
     )
 
     selectedStoreProduct: Mapped["StoreProduct"] = relationship(
-        "StoreProduct", back_populates="shoppingListItems"
+        "StoreProduct", back_populates="shoppingListItems", lazy="selectin"
     )
 
     def to_dict(self):
