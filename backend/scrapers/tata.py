@@ -29,6 +29,7 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
+from sqlalchemy.exc import OperationalError
 from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
 from services.offer_service import upsert_scraper_offer, deactivate_scraper_offer, upsert_oca_offer, deactivate_oca_offer
 
@@ -306,7 +307,14 @@ def enriquecer_playwright(page, todos):
                     product.ean = ean
                 print(f"  [EAN] {product.name[:50]} → {ean}")
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except OperationalError as e:
+            print(f"  [DB] Error en commit de enriquecer_playwright: {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
 
 def scrape_categoria(category_slug, pagina=0, cantidad=50):
@@ -376,6 +384,24 @@ def scrape_categoria(category_slug, pagina=0, cantidad=50):
 
 
 def guardar_en_db(productos):
+    for intento in range(2):
+        try:
+            return _guardar_en_db_impl(productos)
+        except OperationalError as e:
+            print(f"  [DB] Conexión perdida en guardar_en_db (intento {intento + 1}/2): {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            if intento < 1:
+                print("  [DB] Reintentando en 5s...")
+                time.sleep(5)
+            else:
+                print("  [DB] Error persistente, se omite este batch.")
+                return []
+
+
+def _guardar_en_db_impl(productos):
     with app.app_context():
         cadena = StoreChain.query.filter_by(name=STORE_CHAIN_NAME).first()
         if not cadena:

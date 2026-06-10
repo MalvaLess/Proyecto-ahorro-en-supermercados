@@ -26,6 +26,7 @@ from models.models import (
 )
 from datetime import datetime
 from sqlalchemy import literal, func
+from sqlalchemy.exc import OperationalError
 from utils import normalize_brand, jaccard_similarity, same_size, ean13_valido
 from services.offer_service import upsert_scraper_offer, deactivate_scraper_offer
 
@@ -222,6 +223,24 @@ def scrape_pagina(page, categoria_url, pagina_num, _retry=0):
 
 
 def guardar_en_db(productos, categoria_nombre=None):
+    for intento in range(2):
+        try:
+            _guardar_en_db_impl(productos, categoria_nombre)
+            return
+        except OperationalError as e:
+            print(f"  [DB] Conexión perdida (intento {intento + 1}/2): {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            if intento < 1:
+                print("  [DB] Reintentando en 5s...")
+                time.sleep(5)
+            else:
+                print("  [DB] Error persistente, se omite este batch.")
+
+
+def _guardar_en_db_impl(productos, categoria_nombre=None):
     with app.app_context():
         cadena = StoreChain.query.filter_by(name=STORE_CHAIN_NAME).first()
         if not cadena:
