@@ -1,8 +1,8 @@
-"""empty message
+"""initial migrate
 
-Revision ID: 490d09627796
+Revision ID: fb748ddf16aa
 Revises: 
-Create Date: 2026-05-27 21:57:09.947083
+Create Date: 2026-06-08 19:52:08.394046
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '490d09627796'
+revision = 'fb748ddf16aa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -49,13 +49,15 @@ def upgrade():
     sa.Column('firstName', sa.String(length=50), nullable=False),
     sa.Column('lastName', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=50), nullable=False),
-    sa.Column('passwordHash', sa.String(length=255), nullable=False),
+    sa.Column('passwordHash', sa.String(length=255), nullable=True),
+    sa.Column('googleId', sa.String(length=255), nullable=True),
     sa.Column('isActive', sa.Boolean(), nullable=False),
     sa.Column('lastLoginAt', sa.DateTime(), nullable=True),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('userId'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('googleId')
     )
     op.create_table('product',
     sa.Column('productId', sa.Integer(), nullable=False),
@@ -126,6 +128,7 @@ def upgrade():
     sa.Column('externalName', sa.String(length=255), nullable=True),
     sa.Column('externalBrand', sa.String(length=50), nullable=True),
     sa.Column('isAvailable', sa.Boolean(), nullable=False),
+    sa.Column('soldByWeight', sa.Boolean(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updatedAt', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['productId'], ['product.productId'], ),
